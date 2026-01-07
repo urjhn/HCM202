@@ -26,14 +26,17 @@ const QuizButton = ({ onClick }) => {
         className="quiz-button-inner"
         animate={{
           boxShadow: isHovered
-            ? "0 0 30px rgba(229, 57, 53, 0.8), 0 0 60px rgba(229, 57, 53, 0.4)"
-            : "0 10px 30px rgba(229, 57, 53, 0.3)"
+            ? "0 8px 20px rgba(229, 57, 53, 0.6)"
+            : "0 4px 12px rgba(229, 57, 53, 0.4)"
         }}
       >
         <motion.div
           className="quiz-icon"
-          animate={{ rotate: isHovered ? 360 : 0 }}
-          transition={{ duration: 0.6 }}
+          animate={{ 
+            rotate: isHovered ? [0, -10, 10, -10, 0] : 0,
+            scale: isHovered ? 1.1 : 1
+          }}
+          transition={{ duration: 0.5 }}
         >
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
             <path
@@ -42,6 +45,7 @@ const QuizButton = ({ onClick }) => {
             />
           </svg>
         </motion.div>
+        
         
         <AnimatePresence>
           {isHovered && (
