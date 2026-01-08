@@ -1,24 +1,17 @@
+<<<<<<< HEAD
 import { useEffect, useState } from 'react'
 import ThreeBackground from './components/ThreeBackground'
 import QuizButton from './components/QuizButton'
 import QuizGame from './components/QuizGame'
 import './App.css'
+=======
+import Navbar from './components/Navbar'
+>>>>>>> parent of 1e5536d (Merge pull request #2 from urjhn/poop)
 import ContentSection from './components/ContentSection'
 
-
 function App() {
-  const [showThree, setShowThree] = useState(false);
-
-  useEffect(() => {
-    // Initialize quiz game instance
-    window.quizGame = new QuizGame();
-  }, []);
-
-  const handleQuizClick = () => {
-    window.quizGame.start();
-  };
-
   return (
+<<<<<<< HEAD
     <div className="App">
       {/* Nội dung chính của web */}
       <ContentSection />
@@ -72,8 +65,14 @@ function App() {
       {showThree && (
         <ThreeBackground onClose={() => setShowThree(false)} />
       )}
+=======
+    <div className="w-full min-h-screen bg-gray-50">
+      <Navbar />
+      <ContentSection />
+      <TimelineSection />
+>>>>>>> parent of 1e5536d (Merge pull request #2 from urjhn/poop)
     </div>
-  );
+  )
 }
 
 export default App

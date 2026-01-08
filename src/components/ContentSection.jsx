@@ -1,6 +1,6 @@
 const ContentSection = () => {
   return (
-    <div className="max-w-5xl mx-auto px-6 py-6 bg-white " 
+    <div className="max-w-5xl mx-auto px-6 py-6 bg-white" 
          style={{ boxShadow: '-8px 0 15px -5px rgba(0, 0, 0, 0.1)' }}>
       {/* Main Title */}
       <h1 className="text-[2.8rem] font-bold leading-[1.1] mb-3" 
