@@ -24,7 +24,7 @@ const Navbar = () => {
           {/* Menu Items */}
           <div className="flex items-center gap-8">
             {/* Chapter I */}
-            <div className="group cursor-pointer">
+            <a href="#coi-nguon" className="group cursor-pointer">
               <div className="flex items-center gap-2 transition-all duration-300">
                 <FaHome className="text-2xl text-[#D63426] group-hover:scale-110 transition-transform" />
                 <div className="text-sm">
@@ -34,7 +34,7 @@ const Navbar = () => {
                   </p>
                 </div>
               </div>
-            </div>
+            </a>
 
             {/* Chapter II */}
             <div className="group cursor-pointer">

@@ -14,7 +14,7 @@ const TimelineSection = () => {
   ];
 
   return (
-    <div className="w-full bg-gradient-to-b from-white to-gray-50 py-16">
+    <div id="coi-nguon" className="w-full bg-gradient-to-b from-white to-gray-50 py-16">
       {/* HEADER */}
       <motion.div 
         initial={{ opacity: 0 }}
@@ -447,7 +447,7 @@ const TimelineSection = () => {
                     gradient: 'from-yellow-500 to-amber-500'
                   },
                   { 
-                    icon: '🌾', 
+                    icon: 'https://cdn.giaoduc.net.vn/images/4de4c68b74530ee1841e187837764325c1ca1d4edd36241ff23121f64a06b40c91d553ef473aa90c361699425ad87f1a86372b6df2fa54ed05a39abefac2ff56be006905412b27d4feecd5babff4c1c6/khang_thue.png.webp', 
                     title: 'DÂN TỘC', 
                     subtitle: 'Nỗi đau', 
                     content: 'của dân lao động', 
@@ -612,10 +612,10 @@ const TimelineSection = () => {
               
               <div className="space-y-4">
                 {[
-                  { text: 'Yêu nước phải xuất phát từ thực tế cuộc sống', icon: '❤️' },
-                  { text: 'Không thể cứu nước bằng con đường cũ', icon: '🚫' },
-                  { text: 'Cần học hỏi, tìm kiếm tri thức mới', icon: '📚' },
-                  { text: 'Quyết tâm phải gắn với hành động cụ thể', icon: '💪' }
+                  { text: 'Yêu nước phải xuất phát từ thực tế cuộc sống', icon: '' },
+                  { text: 'Không thể cứu nước bằng con đường cũ', icon: '' },
+                  { text: 'Cần học hỏi, tìm kiếm tri thức mới', icon: '' },
+                  { text: 'Quyết tâm phải gắn với hành động cụ thể', icon: '' }
                 ].map((lesson, index) => (
                   <motion.div
                     key={index}
@@ -643,7 +643,7 @@ const TimelineSection = () => {
                   className="mt-8 bg-gradient-to-br from-yellow-50 to-orange-50 p-6 rounded-lg border-2 border-[#D4AF37] shadow-lg"
                 >
                   <p className="text-lg mb-4 font-semibold text-gray-800" style={{ fontFamily: 'Arial, sans-serif' }}>
-                    💭 Nếu là bạn sống trong thời kỳ đó, bạn sẽ làm gì?
+                    Nếu là bạn sống trong thời kỳ đó, bạn sẽ làm gì?
                   </p>
                   <motion.button 
                     whileHover={{ scale: 1.05, boxShadow: '0 10px 30px rgba(214, 52, 38, 0.3)' }}
@@ -677,7 +677,7 @@ const TimelineSection = () => {
             <p className="flex items-center gap-2"><span className="text-xl">✓</span> Hành động: Ra đi vào năm 1911</p>
           </div>
           <div className="bg-white/20 p-4 rounded-lg mb-6">
-            <p className="text-lg mb-2">❓ CÂU HỎI DẪN ĐẾN GIAI ĐOẠN SAU:</p>
+            <p className="text-lg mb-2">CÂU HỎI DẪN ĐẾN GIAI ĐOẠN SAU:</p>
             <p className="text-xl font-bold italic">"Ở nước ngoài, người ta cứu nước bằng cách nào?"</p>
           </div>
           <button className="w-full py-4 bg-white text-[#D63426] rounded-lg font-bold text-lg hover:bg-gray-100 transition-colors flex items-center justify-center gap-2">
