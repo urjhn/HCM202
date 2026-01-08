@@ -5,12 +5,12 @@ const ContentSection = () => {
       {/* Main Title */}
       <h1 className="text-[2.8rem] font-bold leading-[1.1] mb-3" 
           style={{ 
-            fontFamily: 'Franklin Gothic Medium, Arial, sans-serif',
+            fontFamily: 'Arial, sans-serif',
             color: '#D63426',
             letterSpacing: '-0.02em'
           }}>
-        A Comprehensive Journey<br />
-        through Ho Chi Minh's Ideology
+        Hành Trình Toàn Diện<br />
+        Khám Phá Tư Tưởng Hồ Chí Minh
       </h1>
 
       {/* Content Container with Image and Text */}
@@ -31,10 +31,10 @@ const ContentSection = () => {
         <div className="flex-1 pt-1" style={{ maxWidth: '600px' }}>
           <p className="text-[0.95rem] leading-[1.4]" 
              style={{ 
-               fontFamily: 'Georgia, serif',
+               fontFamily: 'Segoe UI, Tahoma, Arial, sans-serif',
                color: '#333'
              }}>
-            <span className="font-bold">Ho Chi Minh</span> (birth name Nguyen Sinh Cung, later known as Nguyen Tat Thanh and Nguyen Ai Quoc during his revolutionary years) was born on May 19, 1890 in Kim Lien village, Nam Dan district, Nghe An province, and passed away on September 2, 1969 in Hanoi.
+            <span className="font-bold">Hồ Chí Minh</span> (tên khai sinh Nguyễn Sinh Cung, sau đổi tên Nguyễn Tất Thành và Nguyễn Ái Quốc trong thời kỳ cách mạng) sinh ngày 19 tháng 5 năm 1890 tại làng Kim Liên, huyện Nam Đàn, tỉnh Nghệ An, và qua đời ngày 2 tháng 9 năm 1969 tại Hà Nội.
           </p>
         </div>
       </div>
@@ -50,10 +50,10 @@ const ContentSection = () => {
           />
           <p className="text-[0.7rem] mt-2 leading-[1.3] italic" 
              style={{ 
-               fontFamily: 'Georgia, serif',
+               fontFamily: 'Segoe UI, Tahoma, Arial, sans-serif',
                color: '#666'
              }}>
-            © Ministry of Culture, Sports and Tourism of Vietnam. Source: Vietnam National Archives.
+            © Bộ Văn hóa, Thể thao và Du lịch Việt Nam. Nguồn: Cục Lưu trữ Quốc gia Việt Nam.
           </p>
         </div>
 
@@ -61,17 +61,17 @@ const ContentSection = () => {
         <div className="flex-1">
           <div className="text-[0.875rem] leading-[1.6] space-y-3" 
                style={{ 
-                 fontFamily: 'Georgia, serif',
+                 fontFamily: 'Segoe UI, Tahoma, Arial, sans-serif',
                  color: '#333'
                }}>
             <p style={{ textAlign: 'justify' }}>
               <span className="float-left text-[4.5rem] font-bold leading-[0.85] mr-[0.15rem] mt-[0.1rem]" 
-                    style={{ fontFamily: 'Georgia, serif' }}>P</span>
-              resident Ho Chi Minh was a true patriot, an enlightened revolutionary, and a genius leader. His life and revolutionary career are closely linked to the glorious history of the Vietnamese nation. He devoted his entire life to the cause of national liberation of the Vietnamese people, contributing to the common struggle of nations for peace, independence, democracy and social progress.
+                    style={{ fontFamily: 'Arial, sans-serif' }}>C</span>
+              hủ tịch Hồ Chí Minh là một người yêu nước chân chính, một nhà cách mạng sáng suốt và một lãnh tụ thiên tài. Cuộc đời và sự nghiệp cách mạng của Người gắn bó mật thiết với lịch sử vẻ vang của dân tộc Việt Nam. Người đã cống hiến trọn đời cho sự nghiệp giải phóng dân tộc của nhân dân Việt Nam, đóng góp vào cuộc đấu tranh chung của các dân tộc vì hòa bình, độc lập, dân chủ và tiến bộ xã hội.
             </p>
             
             <p style={{ textAlign: 'justify' }}>
-              In 1987, UNESCO honored Ho Chi Minh as "National Liberation Hero, Outstanding Cultural Figure of Vietnam". His ideology combined patriotism with internationalism, blending traditional Vietnamese values with modern revolutionary thought. Through his writings and actions, he inspired generations of Vietnamese people to fight for their country's freedom and dignity.
+              Năm 1987, UNESCO đã vinh danh Hồ Chí Minh là "Anh hùng giải phóng dân tộc, Danh nhân văn hóa kiệt xuất của Việt Nam". Tư tưởng của Người kết hợp chủ nghĩa yêu nước với chủ nghĩa quốc tế, hòa quyện những giá trị truyền thống Việt Nam với tư tưởng cách mạng hiện đại. Qua những bài viết và hành động của mình, Người đã truyền cảm hứng cho nhiều thế hệ người Việt Nam đấu tranh vì tự do và phẩm giá của Tổ quốc.
             </p>
           </div>
         </div>
