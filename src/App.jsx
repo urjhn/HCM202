@@ -3,9 +3,7 @@ import ThreeBackground from './components/ThreeBackground'
 import QuizButton from './components/QuizButton'
 import QuizGame from './components/QuizGame'
 import './App.css'
-import Navbar from './components/Navbar'
 import ContentSection from './components/ContentSection'
-import TimelineSection from './components/TimelineSection'
 
 
 function App() {
@@ -23,12 +21,7 @@ function App() {
   return (
     <div className="App">
       {/* Nội dung chính của web */}
-      <div className="w-full min-h-screen bg-gray-50">
-        <Navbar />
-        <ContentSection />
-        <TimelineSection />
-      </div>
-      
+      <ContentSection />
       <QuizButton onClick={handleQuizClick} />
 
       {/* Nút 3D Experience - Circular Design */}
@@ -83,4 +76,4 @@ function App() {
   );
 }
 
-export default App;
+export default App
