@@ -3,6 +3,13 @@ import { BsSunFill } from 'react-icons/bs';
 import logo from '../assets/logo.png';
 
 const Navbar = () => {
+  const scrollToId = (id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    window.location.hash = id;
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   return (
     <nav className="w-full bg-white border-b-2 border-[#D63426] sticky top-0 z-50" 
          style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)' }}>
@@ -37,7 +44,14 @@ const Navbar = () => {
             </a>
 
             {/* Chapter II */}
-            <div className="group cursor-pointer">
+            <a
+              href="#chuong-2"
+              onClick={(e) => {
+                e.preventDefault();
+                scrollToId('chuong-2');
+              }}
+              className="group cursor-pointer"
+            >
               <div className="flex items-center gap-2 transition-all duration-300">
                 <FaShip className="text-2xl text-[#D63426] group-hover:scale-110 transition-transform" />
                 <div className="text-sm">
@@ -47,7 +61,7 @@ const Navbar = () => {
                   </p>
                 </div>
               </div>
-            </div>
+            </a>
 
             {/* Chapter III */}
             <div className="group cursor-pointer">
@@ -76,7 +90,9 @@ const Navbar = () => {
             </div>
 
             {/* CTA Button */}
-            <button className="px-6 py-2.5 bg-[#F5DEDE] text-[#D63426] font-bold rounded-sm relative overflow-hidden border-[3px] border-dashed border-[#D63426] transition-colors duration-300 hover:text-white fill-animation"
+            <button
+              onClick={() => scrollToId('chuong-2')}
+              className="px-6 py-2.5 bg-[#F5DEDE] text-[#D63426] font-bold rounded-sm relative overflow-hidden border-[3px] border-dashed border-[#D63426] transition-colors duration-300 hover:text-white fill-animation"
                     style={{ 
                       fontFamily: 'Arial, sans-serif',
                       letterSpacing: '0.05em'
