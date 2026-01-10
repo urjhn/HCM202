@@ -11,19 +11,19 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="w-full bg-white border-b-2 border-[#D63426] sticky top-0 z-50" 
-         style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)' }}>
+    <nav className="w-full bg-white border-b-2 border-[#D63426] sticky top-0 z-50"
+      style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)' }}>
       <div className="max-w-7xl mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
           {/* Logo Section */}
           <div className="flex items-center gap-2 -ml-2">
             <img src={logo} alt="Logo" className="w-16 h-16 object-contain" />
-            <h1 className="text-lg font-bold" 
-                style={{ 
-                  fontFamily: 'Arial, sans-serif',
-                  color: '#D63426',
-                  letterSpacing: '0.08em'
-                }}>
+            <h1 className="text-lg font-bold"
+              style={{
+                fontFamily: 'Arial, sans-serif',
+                color: '#D63426',
+                letterSpacing: '0.08em'
+              }}>
               CON ĐƯỜNG SÁNG
             </h1>
           </div>
@@ -91,12 +91,12 @@ const Navbar = () => {
 
             {/* CTA Button */}
             <button
-              onClick={() => scrollToId('chuong-2')}
+              onClick={() => scrollToId('coi-nguon')}
               className="px-6 py-2.5 bg-[#F5DEDE] text-[#D63426] font-bold rounded-sm relative overflow-hidden border-[3px] border-dashed border-[#D63426] transition-colors duration-300 hover:text-white fill-animation"
-                    style={{ 
-                      fontFamily: 'Arial, sans-serif',
-                      letterSpacing: '0.05em'
-                    }}>
+              style={{
+                fontFamily: 'Arial, sans-serif',
+                letterSpacing: '0.05em'
+              }}>
               <span className="relative z-10">BẮT ĐẦU HÀNH TRÌNH</span>
             </button>
           </div>
