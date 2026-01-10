@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { motion, useAnimationControls, useMotionValue, useSpring, useTransform } from 'framer-motion';
-import { FaHome, FaBook, FaGraduationCap, FaShip, FaMapMarkerAlt } from 'react-icons/fa';
+import { motion, useAnimationControls, useMotionValue, useSpring, useTransform, AnimatePresence } from 'framer-motion';
+import { FaHome, FaBook, FaGraduationCap, FaShip, FaMapMarkerAlt, FaEnvelope, FaMoneyBillWave, FaPiggyBank, FaHandshake, FaFileContract, FaUserSecret, FaFlag, FaBalanceScale, FaHeart, FaFire, FaShieldAlt, FaStar, FaRegLightbulb } from 'react-icons/fa';
+import { HiBriefcase, HiLightBulb, HiStar, HiUserGroup } from 'react-icons/hi';
 import { BiSolidQuoteAltLeft } from 'react-icons/bi';
 import { Accordion, AccordionItem } from '@heroui/react';
 import { geoMercator, geoPath } from 'd3-geo';
@@ -11,10 +12,10 @@ const TimelineSection = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [chapter2Tab, setChapter2Tab] = useState(0);
   const [activeStopId, setActiveStopId] = useState('saigon');
-  const [walkChoice, setWalkChoice] = useState(null);
-  const [quizPicked, setQuizPicked] = useState(() => new Set());
-  const [detectiveAnswer, setDetectiveAnswer] = useState('');
-  const [detectiveFeedback, setDetectiveFeedback] = useState(null);
+  // Interactive Game State
+  const [scenarioIndex, setScenarioIndex] = useState(0);
+  const [scenarioHistory, setScenarioHistory] = useState([]);
+  const [showScenarioResult, setShowScenarioResult] = useState(false);
   const [worldFeatures, setWorldFeatures] = useState(null);
   const [isDeparting, setIsDeparting] = useState(false);
   const [isChoosingSeat, setIsChoosingSeat] = useState(false);
@@ -23,6 +24,10 @@ const TimelineSection = () => {
   const [isTicketTearing, setIsTicketTearing] = useState(false);
   const [isDepartureComplete, setIsDepartureComplete] = useState(false);
   const [shipAnimationKey, setShipAnimationKey] = useState(0);
+  const [mapZoom, setMapZoom] = useState(1);
+  const [matchedPairs, setMatchedPairs] = useState([]);
+  const [selectedTitle, setSelectedTitle] = useState(null);
+  const [selectedContent, setSelectedContent] = useState(null);
 
   const audioCtxRef = useRef(null);
   const audioPrimedRef = useRef(false);
@@ -182,11 +187,10 @@ const TimelineSection = () => {
 
   const chapter2Tabs = useMemo(
     () => [
-      { id: 0, title: '🌍 Bản đồ hành trình' },
-      { id: 1, title: '👔 1001 nghề nghiệp' },
-      { id: 2, title: '📚 Những bài học lớn' },
-      { id: 3, title: '⚡ Sự kiện trọng đại' },
-      { id: 4, title: '💪 Con người thời kỳ này' }
+      { id: 0, title: 'Nghề Nghiệp', icon: <HiBriefcase /> },
+      { id: 1, title: 'Những bài học lớn', icon: <HiLightBulb /> },
+      { id: 2, title: 'Sự kiện trọng đại', icon: <HiStar /> },
+      { id: 3, title: 'Con người thời kỳ này', icon: <HiUserGroup /> }
     ],
     []
   );
@@ -207,41 +211,100 @@ const TimelineSection = () => {
     []
   );
 
-  const handlePickQuiz = useCallback((stopId) => {
-    setQuizPicked((prev) => {
-      const next = new Set(prev);
-      if (next.has(stopId)) next.delete(stopId);
-      else next.add(stopId);
-      return next;
-    });
+  // Data cho game nối thẻ Bài học lớn
+  const lessonCards = useMemo(() => [
+    { id: 'ap-buc', title: 'BÀI HỌC VỀ ÁP BỨC', content: 'Quan sát các hình thức bất bình đẳng và bóc lột, đặt vấn đề về gốc rễ của áp bức.' },
+    { id: 'doan-ket', title: 'BÀI HỌC VỀ ĐOÀN KẾT', content: 'Liên hệ cuộc đấu tranh của dân tộc bị áp bức với phong trào công nhân thế giới.' },
+    { id: 'to-chuc', title: 'BÀI HỌC VỀ TỔ CHỨC', content: 'Phong trào cần tổ chức và lãnh đạo để có sức mạnh.' },
+    { id: 'ly-luan', title: 'BÀI HỌC VỀ LÝ LUẬN', content: 'Tiếp cận luận điểm về vấn đề dân tộc và thuộc địa, xác lập con đường cách mạng.' }
+  ], []);
+
+  // Data cho game Interactive (3 câu hỏi)
+  const interactiveScenarios = useMemo(() => [
+    {
+      id: 'step1',
+      title: 'London, 1913: Mùa Đông Lạnh',
+      desc: 'Bạn đang làm phụ bếp tại khách sạn Carlton. Công việc cào tuyết rất cực nhọc. Trong túi chỉ còn vài đồng shilling tiền thừa.',
+      question: 'Bạn sẽ làm gì với số tiền này?',
+      options: [
+        { id: 'A', label: 'Mua sách học tiếng Anh', icon: <FaBook />, type: 'vision', feedback: 'Đầu tư cho tri thức là con đường dài hạn.' },
+        { id: 'B', label: 'Gửi tằn tiện về quê nhà', icon: <FaEnvelope />, type: 'heart', feedback: 'Tấm lòng hiếu thảo, nhưng chưa giúp được đại cục.' },
+        { id: 'C', label: 'Tiết kiệm phòng thân', icon: <FaPiggyBank />, type: 'safe', feedback: 'An toàn là trên hết, nhưng khó tạo đột phá.' }
+      ]
+    },
+    {
+      id: 'step2',
+      title: 'Paris, 1919: Thời Cơ Lịch Sử',
+      desc: 'Hội nghị Versailles khai mạc. Các cường quốc đang bàn lại trật tự thế giới. Cơ hội ngàn năm có một.',
+      question: 'Hành động của bạn là gì?',
+      options: [
+        { id: 'A', label: 'Gửi "Bản Yêu sách" đòi quyền tự quyết', icon: <FaFileContract />, type: 'vision', feedback: 'Một hành động dũng cảm gây chấn động dư luận Pháp.' },
+        { id: 'B', label: 'Viết bài ca ngợi nước Pháp', icon: <FaUserSecret />, type: 'safe', feedback: 'An toàn nhưng không thay đổi được thân phận nô lệ.' },
+        { id: 'C', label: 'Quyên góp tiền cho hội người Việt', icon: <FaHandshake />, type: 'heart', feedback: 'Tốt cho cộng đồng, nhưng cần tiếng nói chính trị mạnh hơn.' }
+      ]
+    },
+    {
+      id: 'step3',
+      title: 'Tours, 1920: Sự Lựa Chọn',
+      desc: 'Đảng Xã hội Pháp họp Đại hội. Một bên ủng hộ Lênin (Quốc tế 3), một bên giữ nguyên quan điểm cũ (Quốc tế 2).',
+      question: 'Lá phiếu của bạn đi về đâu?',
+      options: [
+        { id: 'A', label: 'Bỏ phiếu cho Quốc tế 3 (Lênin)', icon: <FaFlag />, type: 'vision', feedback: 'Vì Lênin ủng hộ giải phóng các dân tộc thuộc địa!' },
+        { id: 'B', label: 'Trung lập / Không bỏ phiếu', icon: <FaBalanceScale />, type: 'safe', feedback: 'Sự do dự có thể làm lỡ nhịp lịch sử.' },
+        { id: 'C', label: 'Ở lại Quốc tế 2 vì tình cảm cũ', icon: <FaHeart />, type: 'heart', feedback: 'Tình cảm đồng chí rất quý, nhưng độc lập dân tộc cần đường lối mới.' }
+      ]
+    }
+  ], []);
+
+  const handleScenarioChoice = useCallback((option) => {
+    setScenarioHistory(prev => [...prev, option]);
+
+    // Nếu chưa phải câu cuối -> next
+    if (scenarioIndex < interactiveScenarios.length - 1) {
+      setTimeout(() => {
+        setScenarioIndex(prev => prev + 1);
+      }, 400); // delay chút cho hiệu ứng
+    } else {
+      // Câu cuối -> show result
+      setTimeout(() => {
+        setShowScenarioResult(true);
+      }, 400);
+    }
+  }, [scenarioIndex, interactiveScenarios.length]);
+
+  const restartInteractiveGame = useCallback(() => {
+    setScenarioIndex(0);
+    setScenarioHistory([]);
+    setShowScenarioResult(false);
   }, []);
 
-  const runDetective = useCallback(() => {
-    const answer = detectiveAnswer.trim().toLowerCase();
-    if (!answer) {
-      setDetectiveFeedback({ score: 0, notes: ['Hãy nhập câu trả lời để hệ thống phản hồi.'] });
-      return;
+  const handleSelectTitle = useCallback((id) => {
+    setSelectedTitle(id);
+    if (selectedContent === id) {
+      setMatchedPairs(prev => [...prev, id]);
+      setSelectedTitle(null);
+      setSelectedContent(null);
     }
+  }, [selectedContent]);
 
-    const keys = [
-      { k: ['tù', 'đại xá', 'tù chính trị'], label: 'Bạn đã nhắc tới đại xá/tù chính trị.' },
-      { k: ['báo chí', 'xuất bản'], label: 'Bạn đã nhắc tới tự do báo chí/xuất bản.' },
-      { k: ['hội họp', 'lập hội', 'tổ chức'], label: 'Bạn đã nhắc tới quyền hội họp/lập hội.' },
-      { k: ['bình đẳng', 'người bản xứ', 'pháp luật'], label: 'Bạn đã nhắc tới bình đẳng trước pháp luật/cải cách pháp lý.' },
-      { k: ['wilson', '14 điểm', 'tự quyết'], label: 'Bạn đã liên hệ với “14 điểm” và quyền tự quyết.' }
-    ];
-
-    let score = 0;
-    const notes = [];
-    for (const item of keys) {
-      if (item.k.some((kw) => answer.includes(kw))) {
-        score += 1;
-        notes.push(item.label);
-      }
+  const handleSelectContent = useCallback((id) => {
+    setSelectedContent(id);
+    if (selectedTitle === id) {
+      setMatchedPairs(prev => [...prev, id]);
+      setSelectedTitle(null);
+      setSelectedContent(null);
     }
-    if (notes.length === 0) notes.push('Gợi ý: thử nhắc tới “tự do báo chí”, “đại xá tù chính trị”, “quyền hội họp/lập hội”, “bình đẳng trước pháp luật”, hoặc liên hệ “14 điểm” của Wilson.');
-    setDetectiveFeedback({ score, notes });
-  }, [detectiveAnswer]);
+  }, [selectedTitle]);
+
+  const resetMatchingGame = useCallback(() => {
+    setMatchedPairs([]);
+    setSelectedTitle(null);
+    setSelectedContent(null);
+  }, []);
+
+
+
+
 
   const seatRows = useMemo(() => {
     // 2 ghế - lối đi - 2 ghế (mô phỏng khoang tàu)
@@ -626,7 +689,7 @@ const TimelineSection = () => {
           <div className="max-w-2xl bg-gradient-to-br from-orange-50 to-yellow-50 border-l-4 border-[#D63426] shadow-xl rounded-lg p-8 relative">
             <div className="absolute -top-6 -left-4 text-6xl text-[#D63426] opacity-30 font-serif">"</div>
 
-            <p className="text-lg font-serif italic text-gray-800 leading-relaxed mb-6 relative z-10">
+            <p className="text-lg italic text-gray-800 leading-relaxed mb-6 relative z-10" style={{ fontFamily: "'Segoe UI', 'Roboto', 'Arial', sans-serif" }}>
               "Tôi muốn đi ra ngoài, xem nước Pháp và các nước khác. Sau khi xem xét họ làm như thế nào, tôi sẽ trở về giúp đồng bào chúng tôi."
             </p>
 
@@ -1487,23 +1550,13 @@ const TimelineSection = () => {
             <div className="flex items-start justify-between gap-6 flex-wrap">
               <div>
                 <p className="text-sm font-bold tracking-wider text-[#D63426]" style={{ fontFamily: 'Arial, sans-serif' }}>GIAI ĐOẠN 2 • 1911–1920</p>
-                <h2 className="text-3xl md:text-4xl font-extrabold mt-2" style={{ fontFamily: 'Arial, sans-serif', color: '#D63426' }}>
-                  “HÀNH TRÌNH TÌM ĐƯỜNG”
+                <h2 className="text-3xl md:text-4xl font-extrabold mt-2" style={{ fontFamily: "'Segoe UI', 'Roboto', 'Arial', sans-serif", color: '#D63426' }}>
+                  "HÀNH TRÌNH TÌM ĐƯỜNG"
                 </h2>
-                <p className="mt-3 text-gray-700" style={{ fontFamily: 'Segoe UI, Tahoma, Arial, sans-serif' }}>
-                  <span className="font-semibold">30 Quốc Gia</span> • <span className="font-semibold">1001 Nghề Nghiệp</span> • <span className="font-semibold">1 Khát Vọng</span>
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div className="bg-white/70 border border-[#D4AF37]/30 rounded-lg px-4 py-3">
-                  <p className="text-gray-500">Thời gian</p>
-                  <p className="font-bold text-gray-900">9 năm</p>
-                </div>
               </div>
             </div>
 
-            <div className="mt-6 bg-gradient-to-r from-[#D63426] to-[#B52A1E] text-white rounded-xl p-5 shadow-lg">
+            <div className="mt-6 bg-gradient-to-r from-[#E88A82] to-[#D4736B] text-white rounded-xl p-5 shadow-lg">
               <div className="flex items-start gap-3">
                 <BiSolidQuoteAltLeft className="text-3xl opacity-90 mt-1" />
                 <div>
@@ -1534,11 +1587,34 @@ const TimelineSection = () => {
                     <span className="text-gray-400">•</span>
                     <span className="text-gray-600">{activeStop.year}</span>
                   </div>
-                  <div className="text-xs text-gray-500">{activeStop.country}</div>
+                  <div className="flex items-center gap-2">
+                    <div className="text-xs text-gray-500 mr-2">{activeStop.country}</div>
+                    <button
+                      onClick={() => setMapZoom(z => Math.max(1, z - 0.5))}
+                      className="w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold transition-colors"
+                      title="Thu nhỏ"
+                    >
+                      −
+                    </button>
+                    <span className="text-xs text-gray-500 min-w-[40px] text-center">{Math.round(mapZoom * 100)}%</span>
+                    <button
+                      onClick={() => setMapZoom(z => Math.min(3, z + 0.5))}
+                      className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#D63426] hover:bg-[#B52A1E] text-white font-bold transition-colors"
+                      title="Phóng to"
+                    >
+                      +
+                    </button>
+                  </div>
                 </div>
 
-                <div className="p-4">
-                  <svg viewBox={`0 0 ${MAP_W} ${MAP_H}`} className="w-full h-auto" role="img" aria-label="Bản đồ thế giới và đường hành trình 1911-1920">
+                <div className="p-4 overflow-auto max-h-[500px]" style={{ cursor: mapZoom > 1 ? 'grab' : 'default' }}>
+                  <svg
+                    viewBox={`0 0 ${MAP_W} ${MAP_H}`}
+                    className="h-auto transition-transform duration-300"
+                    style={{ width: `${100 * mapZoom}%`, minWidth: '100%' }}
+                    role="img"
+                    aria-label="Bản đồ thế giới và đường hành trình 1911-1920"
+                  >
                     <rect x="0" y="0" width={MAP_W} height={MAP_H} fill="#ffffff" />
 
                     {/* Countries */}
@@ -1625,8 +1701,8 @@ const TimelineSection = () => {
           className="mt-10 grid grid-cols-1 lg:grid-cols-3 gap-6"
         >
           <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-200 shadow-lg p-7">
-            <h3 className="text-2xl font-bold" style={{ color: '#D63426', fontFamily: 'Arial, sans-serif' }}>2. STORY — Câu chuyện cảm xúc</h3>
-            <p className="text-sm text-gray-600 mt-2">Tái hiện (không phải trích văn bản gốc):</p>
+            <h3 className="text-2xl font-bold" style={{ color: '#D63426', fontFamily: 'Arial, sans-serif' }}>Câu chuyện cảm xúc</h3>
+            <p className="text-sm text-gray-400 italic text-right">Tái hiện (không phải trích văn bản gốc)</p>
             <div className="mt-5 bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-xl p-5">
               <p className="font-bold text-gray-900 mb-2">“Bếp phó trên tàu biển”</p>
               <p className="text-gray-800 leading-relaxed">
@@ -1647,7 +1723,7 @@ const TimelineSection = () => {
           </div>
 
           <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-7">
-            <h3 className="text-2xl font-bold" style={{ color: '#D63426', fontFamily: 'Arial, sans-serif' }}>3. CONTEXT — Bối cảnh lịch sử</h3>
+            <h3 className="text-2xl font-bold" style={{ color: '#D63426', fontFamily: 'Arial, sans-serif' }}>Bối cảnh lịch sử</h3>
             <ul className="mt-4 space-y-3 text-sm text-gray-800">
               <li className="flex gap-2"><span className="font-bold text-[#D63426]">1914–1918</span><span>Thế chiến thứ nhất</span></li>
               <li className="flex gap-2"><span className="font-bold text-[#D63426]">1917</span><span>Cách mạng Tháng Mười Nga</span></li>
@@ -1671,7 +1747,7 @@ const TimelineSection = () => {
           transition={{ duration: 0.8, delay: 0.15 }}
           className="mt-10"
         >
-          <h3 className="text-3xl font-bold text-center" style={{ color: '#D63426', fontFamily: 'Arial, sans-serif' }}>4. CONTENT — Nội dung chính</h3>
+          <h3 className="text-3xl font-bold text-center" style={{ color: '#D63426', fontFamily: 'Arial, sans-serif' }}>Nội dung</h3>
 
           <div className="flex gap-3 mt-6 mb-6 overflow-x-auto">
             {chapter2Tabs.map((t) => (
@@ -1681,13 +1757,14 @@ const TimelineSection = () => {
                 whileHover={{ scale: 1.04, y: -1 }}
                 whileTap={{ scale: 0.98 }}
                 className={
-                  `px-5 py-3 rounded-lg font-bold whitespace-nowrap transition-all ` +
+                  `px-5 py-3 rounded-lg font-bold whitespace-nowrap transition-all flex items-center gap-2 ` +
                   (chapter2Tab === t.id
                     ? 'bg-gradient-to-r from-[#D63426] to-[#B52A1E] text-white shadow-lg'
                     : 'bg-white border-2 border-gray-200 text-gray-700 hover:border-[#D4AF37] hover:shadow-md')
                 }
                 style={{ fontFamily: 'Arial, sans-serif' }}
               >
+                {t.icon}
                 {t.title}
               </motion.button>
             ))}
@@ -1701,51 +1778,8 @@ const TimelineSection = () => {
             className="bg-gradient-to-br from-white to-orange-50 p-7 md:p-8 rounded-2xl shadow-xl border border-[#D4AF37]/30"
           >
             {chapter2Tab === 0 && (
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2">
-                  <h4 className="text-2xl font-bold mb-3" style={{ color: '#D63426' }}>Bản đồ hành trình (tương tác)</h4>
-                  <p className="text-gray-700 text-sm mb-5">Click marker trên bản đồ ở phần Header để chuyển điểm dừng; danh sách dưới đây tóm tắt 4 điểm chính.</p>
-                  <div className="space-y-4">
-                    {journeyStops.map((s, idx) => (
-                      <button
-                        key={s.id}
-                        type="button"
-                        onClick={() => setActiveStopId(s.id)}
-                        className={
-                          `w-full text-left p-5 rounded-xl border transition-all ` +
-                          (s.id === activeStopId
-                            ? 'bg-white border-[#D63426]/40 shadow-md'
-                            : 'bg-white/70 border-gray-200 hover:border-[#D4AF37] hover:shadow-sm')
-                        }
-                      >
-                        <div className="flex items-center justify-between gap-4">
-                          <div>
-                            <p className="text-sm text-gray-500">{idx + 1}. {s.year} • {s.country}</p>
-                            <p className="font-bold text-gray-900 mt-1">{s.label}</p>
-                          </div>
-                          <span className="text-xs px-3 py-1 rounded-full bg-[#F5DEDE] text-[#D63426] font-bold">{s.job}</span>
-                        </div>
-                        <p className="text-sm text-gray-700 mt-2">{s.learned}</p>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="bg-white rounded-xl border border-gray-200 p-6">
-                  <h5 className="font-bold text-lg" style={{ color: '#D63426' }}>Thế giới 1911–1920</h5>
-                  <div className="mt-3 space-y-2 text-sm text-gray-800">
-                    <p>⚡ 1914–1918: Thế chiến thứ nhất</p>
-                    <p>⚡ 1917: Cách mạng Tháng Mười Nga</p>
-                    <p>⚡ 1919: Versailles; Comintern</p>
-                    <p>⚡ 1920: Bước ngoặt theo CNXH</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {chapter2Tab === 1 && (
               <div>
-                <h4 className="text-2xl font-bold mb-4" style={{ color: '#D63426' }}>“1001 nghề nghiệp” (minh hoạ)</h4>
+                <h4 className="text-2xl font-bold mb-4" style={{ color: '#D63426' }}>Nghề nghiệp</h4>
                 <p className="text-sm text-gray-700 mb-6">Di chuột/nhấn vào mỗi nghề để xem mô tả ngắn.</p>
 
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -1753,59 +1787,100 @@ const TimelineSection = () => {
                     <motion.div
                       key={job.title}
                       whileHover={{ y: -4, boxShadow: '0 12px 30px rgba(214, 52, 38, 0.16)' }}
-                      className="bg-white border border-gray-200 rounded-xl p-4 cursor-default"
-                      title={job.story}
+                      className="bg-white border border-gray-200 rounded-xl p-4 cursor-default group relative overflow-hidden"
                     >
-                      <div className="text-3xl">{job.icon}</div>
-                      <p className="font-bold mt-2 text-gray-900">{job.title}</p>
-                      <p className="text-xs text-gray-600 mt-1">{job.story}</p>
+                      <div className="text-4xl mb-2">{job.icon}</div>
+                      <p className="font-bold text-gray-900">{job.title}</p>
+                      {/* Tooltip hiển thị khi hover */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#D63426] to-[#B52A1E] text-white p-4 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl">
+                        <p className="text-sm text-center">{job.story}</p>
+                      </div>
                     </motion.div>
                   ))}
                 </div>
 
-                <div className="mt-6 p-4 bg-yellow-50 border-l-4 border-[#D4AF37] rounded-r">
-                  <p className="text-xs text-gray-700 italic">
-                    <strong>Gợi ý kiểm chứng:</strong> phần nghề nghiệp là minh hoạ theo mô típ “làm nhiều nghề để sinh sống khi bôn ba”; bạn có thể bổ sung nghề/cột mốc theo tư liệu trong Biên niên tiểu sử.
-                  </p>
+
+              </div>
+            )}
+
+            {chapter2Tab === 1 && (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-2xl font-bold" style={{ color: '#D63426' }}>Những bài học lớn - Nối thẻ</h4>
+                  <button
+                    onClick={resetMatchingGame}
+                    className="px-4 py-2 bg-[#D63426] text-white rounded-lg font-bold text-sm hover:bg-[#B52A1E] transition-colors"
+                  >
+                    Chơi lại
+                  </button>
                 </div>
+                <p className="text-sm text-gray-600 mb-6">Click vào thẻ tiêu đề bên trái và thẻ nội dung bên phải để nối cặp đúng. ({matchedPairs.length}/{lessonCards.length} cặp)</p>
+
+                <div className="grid grid-cols-2 gap-6">
+                  {/* Cột tiêu đề */}
+                  <div className="space-y-3">
+                    <p className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2">Tiêu đề</p>
+                    {lessonCards.map((card) => (
+                      <motion.button
+                        key={card.id}
+                        onClick={() => !matchedPairs.includes(card.id) && handleSelectTitle(card.id)}
+                        whileHover={{ scale: matchedPairs.includes(card.id) ? 1 : 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className={`w-full text-left p-4 rounded-xl border-2 transition-all ${matchedPairs.includes(card.id)
+                          ? 'bg-green-100 border-green-400 text-green-800 cursor-default'
+                          : selectedTitle === card.id
+                            ? 'bg-[#F5DEDE] border-[#D63426] text-[#D63426]'
+                            : 'bg-white border-gray-200 text-gray-800 hover:border-[#D63426]/50'
+                          }`}
+                        disabled={matchedPairs.includes(card.id)}
+                      >
+                        <p className="font-bold">{card.title}</p>
+                      </motion.button>
+                    ))}
+                  </div>
+
+                  {/* Cột nội dung */}
+                  <div className="space-y-3">
+                    <p className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-2">Nội dung</p>
+                    {[...lessonCards].sort(() => 0.5 - Math.random()).map((card) => (
+                      <motion.button
+                        key={card.id}
+                        onClick={() => !matchedPairs.includes(card.id) && handleSelectContent(card.id)}
+                        whileHover={{ scale: matchedPairs.includes(card.id) ? 1 : 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className={`w-full text-left p-4 rounded-xl border-2 transition-all ${matchedPairs.includes(card.id)
+                          ? 'bg-green-100 border-green-400 text-green-800 cursor-default'
+                          : selectedContent === card.id
+                            ? 'bg-[#F5DEDE] border-[#D63426] text-[#D63426]'
+                            : 'bg-white border-gray-200 text-gray-800 hover:border-[#D63426]/50'
+                          }`}
+                        disabled={matchedPairs.includes(card.id)}
+                      >
+                        <p className="text-sm">{card.content}</p>
+                      </motion.button>
+                    ))}
+                  </div>
+                </div>
+
+                {matchedPairs.length === lessonCards.length && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mt-6 p-4 bg-green-100 border border-green-400 rounded-xl text-center"
+                  >
+                    <p className="text-green-800 font-bold">Xuất sắc! Bạn đã hoàn thành tất cả các cặp!</p>
+                  </motion.div>
+                )}
               </div>
             )}
 
             {chapter2Tab === 2 && (
               <div>
-                <h4 className="text-2xl font-bold mb-4" style={{ color: '#D63426' }}>Những bài học lớn (mở dần)</h4>
-                <Accordion variant="splitted" className="bg-transparent">
-                  <AccordionItem key="1" aria-label="Bài học về áp bức" title="BÀI HỌC VỀ ÁP BỨC">
-                    <p className="text-gray-800 leading-relaxed">
-                      Qua thực tiễn ở nhiều quốc gia, Người quan sát các hình thức bất bình đẳng và bóc lột, từ đó đặt vấn đề về gốc rễ của áp bức và con đường giải phóng.
-                    </p>
-                  </AccordionItem>
-                  <AccordionItem key="2" aria-label="Bài học về đoàn kết" title="BÀI HỌC VỀ ĐOÀN KẾT">
-                    <p className="text-gray-800 leading-relaxed">
-                      Ý thức liên hệ cuộc đấu tranh của dân tộc bị áp bức với phong trào công nhân và phong trào tiến bộ trên thế giới.
-                    </p>
-                  </AccordionItem>
-                  <AccordionItem key="3" aria-label="Bài học về tổ chức" title="BÀI HỌC VỀ TỔ CHỨC">
-                    <p className="text-gray-800 leading-relaxed">
-                      Quan sát phong trào công nhân ở Pháp giúp củng cố nhận thức: phong trào cần tổ chức và lãnh đạo.
-                    </p>
-                  </AccordionItem>
-                  <AccordionItem key="4" aria-label="Bài học về lý luận" title="BÀI HỌC VỀ LÝ LUẬN">
-                    <p className="text-gray-800 leading-relaxed">
-                      Bước ngoặt 1920 gắn với việc tiếp cận luận điểm về vấn đề dân tộc và thuộc địa, từ đó xác lập con đường cách mạng.
-                    </p>
-                  </AccordionItem>
-                </Accordion>
-              </div>
-            )}
-
-            {chapter2Tab === 3 && (
-              <div>
                 <h4 className="text-2xl font-bold mb-4" style={{ color: '#D63426' }}>Sự kiện trọng đại</h4>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
                     <p className="text-sm font-bold text-[#D63426]">1919 • THÀNH NGUYỄN ÁI QUỐC</p>
-                    <p className="mt-2 font-semibold text-gray-900">📜 “Yêu sách của nhân dân An Nam” (18/6/1919)</p>
+                    <p className="mt-2 font-semibold text-gray-900">“Yêu sách của nhân dân An Nam” (18/6/1919)</p>
                     <p className="text-sm text-gray-700 mt-2">Tóm tắt 8 điểm yêu cầu gửi Hội nghị Versailles:</p>
                     <ol className="mt-3 text-sm text-gray-800 list-decimal pl-5 space-y-1">
                       <li>Ân xá toàn thể các tù chính trị.</li>
@@ -1824,7 +1899,7 @@ const TimelineSection = () => {
 
                   <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
                     <p className="text-sm font-bold text-[#D63426]">1920 • BƯỚC NGOẶT TƯ TƯỞNG</p>
-                    <p className="mt-2 font-semibold text-gray-900">📖 Tiếp cận luận điểm về vấn đề dân tộc & thuộc địa</p>
+                    <p className="mt-2 font-semibold text-gray-900">Tiếp cận luận điểm về vấn đề dân tộc & thuộc địa</p>
                     <div className="mt-4 bg-gradient-to-r from-orange-50 to-yellow-50 border-l-4 border-[#D63426] p-5 rounded-r">
                       <p className="text-sm italic text-gray-800 leading-relaxed">
                         “Luận cương của Lênin làm cho tôi rất cảm động, phấn khởi, sáng tỏ, tin tưởng biết bao! … Tôi vui mừng đến phát khóc lên.”
@@ -1832,51 +1907,28 @@ const TimelineSection = () => {
                       <p className="text-xs text-[#D63426] font-semibold mt-2">— Hồ Chí Minh, “Con đường dẫn tôi đến chủ nghĩa Lênin” (1960).</p>
                     </div>
                     <p className="mt-4 text-sm text-gray-700">
-                      🔴 Tham gia Đảng Cộng sản Pháp tại Đại hội Tours (12/1920) — một dấu mốc chính trị quan trọng.
+                      Tham gia Đảng Cộng sản Pháp tại Đại hội Tours (12/1920) — một dấu mốc chính trị quan trọng.
                     </p>
                   </div>
                 </div>
               </div>
             )}
 
-            {chapter2Tab === 4 && (
+            {chapter2Tab === 3 && (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-                  <h4 className="text-2xl font-bold" style={{ color: '#D63426' }}>Profile update</h4>
+                  <h4 className="text-2xl font-bold" style={{ color: '#D63426' }}>Cập nhật thông tin</h4>
                   <div className="mt-4 space-y-3 text-sm text-gray-800">
-                    <p><span className="font-bold">🧑 Tên gọi:</span> Nguyễn Tất Thành → Nguyễn Ái Quốc (1919)</p>
-                    <p><span className="font-bold">🌍 Ngôn ngữ:</span> Việt • Pháp • Anh (và tiếp xúc các cộng đồng khác)</p>
-                    <p><span className="font-bold">💼 Kỹ năng:</span> Viết • diễn thuyết • tổ chức</p>
-                    <p><span className="font-bold">📖 Tri thức:</span> Tiếp cận chủ nghĩa Mác–Lênin (bước ngoặt 1920)</p>
-                    <p><span className="font-bold">🎯 Mục tiêu:</span> Con đường cứu nước gắn với giải phóng người lao động và dân tộc bị áp bức</p>
+                    <p><span className="font-bold">Tên gọi:</span> Nguyễn Tất Thành → Nguyễn Ái Quốc (1919)</p>
+                    <p><span className="font-bold">Ngôn ngữ:</span> Việt • Pháp • Anh (và tiếp xúc các cộng đồng khác)</p>
+                    <p><span className="font-bold">Kỹ năng:</span> Viết • diễn thuyết • tổ chức</p>
+                    <p><span className="font-bold">Tri thức:</span> Tiếp cận chủ nghĩa Mác–Lênin (bước ngoặt 1920)</p>
+                    <p><span className="font-bold">Mục tiêu:</span> Con đường cứu nước gắn với giải phóng người lao động và dân tộc bị áp bức</p>
                   </div>
                   <div className="mt-6 p-4 bg-gradient-to-br from-yellow-50 to-orange-50 border border-[#D4AF37]/40 rounded-xl">
                     <p className="text-gray-800 italic">
                       “Từ một thanh niên yêu nước mơ hồ → thành một chiến sĩ cách mạng giác ngộ (bước ngoặt 1920).”
                     </p>
-                  </div>
-                </div>
-
-                <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-                  <h4 className="text-2xl font-bold" style={{ color: '#D63426' }}>7. CONNECT</h4>
-                  <div className="mt-4 border border-[#D4AF37]/30 rounded-xl overflow-hidden">
-                    <div className="p-5 bg-gradient-to-r from-[#D63426] to-[#B52A1E] text-white">
-                      <p className="font-bold text-lg">🌟 Chuyển biến lớn</p>
-                      <p className="text-sm text-white/85 mt-1">Trước 1920: “Tìm đường cứu nước như thế nào?”</p>
-                      <p className="text-sm text-white/85">Sau 1920: “CNXH + Tổ chức chính trị = con đường giải phóng”</p>
-                    </div>
-                    <div className="p-5 bg-white">
-                      <p className="text-sm text-gray-800">
-                        ➡️ Nhiệm vụ tiếp theo (gợi mở giai đoạn sau): tuyên truyền lý luận cách mạng, chuẩn bị cho sự ra đời tổ chức lãnh đạo.
-                      </p>
-                      <button
-                        type="button"
-                        className="mt-4 px-5 py-3 bg-[#F5DEDE] text-[#D63426] font-bold rounded-lg border-2 border-dashed border-[#D63426] opacity-70 cursor-not-allowed"
-                        title="Chương tiếp theo sẽ được bổ sung"
-                      >
-                        Khám phá 1920–1930 →
-                      </button>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -1893,22 +1945,23 @@ const TimelineSection = () => {
           className="mt-10 grid grid-cols-1 lg:grid-cols-2 gap-6"
         >
           <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-7">
-            <h3 className="text-2xl font-bold" style={{ color: '#D63426', fontFamily: 'Arial, sans-serif' }}>5. MULTIMEDIA</h3>
-            <p className="text-sm text-gray-700 mt-2">Gallery (placeholder) — bạn có thể thay ảnh thật sau.</p>
+            <h3 className="text-2xl font-bold" style={{ color: '#D63426', fontFamily: 'Arial, sans-serif' }}>Đa phương tiện</h3>
             <div className="mt-5 grid grid-cols-2 md:grid-cols-3 gap-4">
               {[
-                { t: 'Tàu Amiral Latouche-Tréville', s: 'Bến Nhà Rồng / tư liệu ảnh' },
-                { t: 'Paris đầu thế kỷ XX', s: 'Tư liệu đô thị' },
-                { t: 'Hội nghị Versailles 1919', s: 'Tư liệu hội nghị' },
-                { t: '“Yêu sách…” 1919', s: 'Văn bản/scan' },
-                { t: 'Phong trào công nhân', s: 'Tư liệu lao động' },
-                { t: 'Đại hội Tours 1920', s: 'Tư liệu đảng phái' }
+                { t: 'Tàu Amiral Latouche-Tréville', s: 'Bến Nhà Rồng / tư liệu ảnh', img: 'https://cly.1cdn.vn/2016/09/01/congly-vn_amiral-latouche-trc3a9ville.jpg' },
+                { t: 'Paris đầu thế kỷ XX', s: 'Tư liệu đô thị', img: 'https://kenh14cdn.com/k:thumb_w/600/A3YmnWqkHeph7OwGyu6TwbX57tgTw/Image/2013/11/11B/2-4d629/so-sanh-hinh-anh-ha-noi-va-paris-cuoi-the-ky-19.jpg' },
+                { t: 'Hội nghị Versailles 1919', s: 'Tư liệu hội nghị', img: 'https://nghiencuuquocte.org/wp-content/uploads/2019/01/08.jpg' },
+                { t: '“Yêu sách…” 1919', s: 'Văn bản/scan', img: 'https://tapchigiaothong.qltns.mediacdn.vn/tapchigiaothong.vn/files/Thuy.duong/2020/05/14/ban-yeu-sach-1436.jpg' },
+                { t: 'Phong trào công nhân', s: 'Tư liệu lao động', img: 'https://filehcma3.hcma.vn/Image?path=hv3.tbt/2025/4/26//Picture1.png&w=1200&mode=none' },
+                { t: 'Đại hội Tours 1920', s: 'Tư liệu đảng phái', img: 'https://bthcm.hue.gov.vn/Portals/0/Medias/Nam2024/T12/15.Toan-Canh-Dai-Hoi-Tour-Phap-1920.jpg' }
               ].map((it) => (
-                <div key={it.t} className="border border-gray-200 rounded-xl overflow-hidden bg-gradient-to-br from-gray-50 to-white">
-                  <div className="h-24 bg-gradient-to-r from-[#F5DEDE] to-orange-50" />
+                <div key={it.t} className="border border-gray-200 rounded-xl overflow-hidden bg-gradient-to-br from-gray-50 to-white hover:shadow-md transition-shadow">
+                  <div className="h-32 bg-gray-200 overflow-hidden">
+                    <img src={it.img} alt={it.t} className="w-full h-full object-cover" />
+                  </div>
                   <div className="p-3">
-                    <p className="text-sm font-bold text-gray-900">{it.t}</p>
-                    <p className="text-xs text-gray-500 italic mt-1">Nguồn: {it.s}</p>
+                    <p className="text-sm font-bold text-gray-900 line-clamp-2" title={it.t}>{it.t}</p>
+                    <p className="text-xs text-gray-500 italic mt-1 line-clamp-1" title={it.s}>Nguồn: {it.s}</p>
                   </div>
                 </div>
               ))}
@@ -1916,103 +1969,153 @@ const TimelineSection = () => {
           </div>
 
           <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-7">
-            <h3 className="text-2xl font-bold" style={{ color: '#D63426', fontFamily: 'Arial, sans-serif' }}>6. INTERACTIVE</h3>
+            <h3 className="text-2xl font-bold" style={{ color: '#D63426', fontFamily: 'Arial, sans-serif' }}>Trải nghiệm tương tác</h3>
 
-            <div className="mt-4 space-y-6">
-              {/* A. Walk in His Shoes */}
-              <div className="border border-gray-200 rounded-xl p-5 bg-gradient-to-br from-white to-gray-50">
-                <p className="font-bold text-gray-900">A. “Walk in His Shoes” (mô phỏng)</p>
-                <p className="text-sm text-gray-700 mt-1">Bạn là Nguyễn Tất Thành năm 1913. Bạn dùng 3 shilling còn lại để làm gì?</p>
-                <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
-                  {[
-                    { id: 'books', t: 'Mua sách học tiếng Anh', r: 'Tăng vốn tri thức & khả năng giao tiếp, mở rộng cơ hội.' },
-                    { id: 'send', t: 'Gửi về Việt Nam', r: 'Chia sẻ khó khăn với gia đình/đồng bào, nhưng ít tích lũy tri thức.' },
-                    { id: 'club', t: 'Tham gia CLB chính trị', r: 'Tiếp xúc phong trào, nhưng rủi ro bị theo dõi/khó kiếm việc.' }
-                  ].map((c) => (
-                    <button
-                      key={c.id}
-                      type="button"
-                      onClick={() => setWalkChoice(c)}
-                      className={
-                        `px-4 py-3 rounded-lg border text-left transition-all ` +
-                        (walkChoice?.id === c.id
-                          ? 'bg-[#F5DEDE] border-[#D63426] shadow-sm'
-                          : 'bg-white border-gray-200 hover:border-[#D4AF37]')
-                      }
-                    >
-                      <p className="font-bold text-gray-900">{c.t}</p>
-                    </button>
-                  ))}
-                </div>
-                {walkChoice && (
-                  <div className="mt-4 p-4 bg-yellow-50 border-l-4 border-[#D4AF37] rounded-r text-sm text-gray-800">
-                    <p className="font-bold">Kết quả (mô phỏng):</p>
-                    <p className="mt-1">{walkChoice.r}</p>
-                  </div>
-                )}
-              </div>
-
-              {/* B. World Map Quiz */}
-              <div className="border border-gray-200 rounded-xl p-5 bg-gradient-to-br from-white to-gray-50">
-                <p className="font-bold text-gray-900">B. “World Map Quiz” (mini)</p>
-                <p className="text-sm text-gray-700 mt-1">Click vào các điểm dừng chính (trên map ở phần Header) để ghi điểm.</p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {journeyStops.map((s) => {
-                    const picked = quizPicked.has(s.id);
-                    return (
-                      <button
-                        key={s.id}
-                        type="button"
-                        onClick={() => handlePickQuiz(s.id)}
-                        className={
-                          `px-3 py-2 rounded-lg border text-sm font-semibold transition-all ` +
-                          (picked
-                            ? 'bg-gradient-to-r from-[#D63426] to-[#B52A1E] text-white border-transparent'
-                            : 'bg-white border-gray-200 text-gray-800 hover:border-[#D4AF37]')
-                        }
-                      >
-                        {picked ? '✓ ' : ''}{s.country}
-                      </button>
-                    );
-                  })}
-                </div>
-                <p className="mt-3 text-sm text-gray-800">
-                  Điểm: <span className="font-bold text-[#D63426]">{quizPicked.size * 10}</span> • Đã tìm: <span className="font-bold">{quizPicked.size}</span>/{journeyStops.length}
-                </p>
-              </div>
-
-              {/* C. Document Detective */}
-              <div className="border border-gray-200 rounded-xl p-5 bg-gradient-to-br from-white to-gray-50">
-                <p className="font-bold text-gray-900">C. “Document Detective” (phân tích tự động)</p>
-                <p className="text-sm text-gray-700 mt-1">Đọc “Yêu sách…” (1919) và trả lời ngắn: điều nào quan trọng nhất? vì sao? so sánh với “14 điểm” của Wilson?</p>
-                <textarea
-                  value={detectiveAnswer}
-                  onChange={(e) => setDetectiveAnswer(e.target.value)}
-                  rows={4}
-                  className="mt-3 w-full rounded-lg border border-gray-200 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/40"
-                  placeholder="Nhập câu trả lời của bạn…"
-                />
-                <div className="mt-3 flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={runDetective}
-                    className="px-5 py-2.5 bg-gradient-to-r from-[#D63426] to-[#B52A1E] text-white rounded-lg font-bold"
+            <div className="mt-6">
+              {showScenarioResult ? (
+                <div className="border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm p-8 text-center">
+                  <motion.div
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="mb-6"
                   >
-                    Submit
-                  </button>
-                  {detectiveFeedback && (
-                    <p className="text-sm text-gray-800">
-                      Điểm gợi ý: <span className="font-bold text-[#D63426]">{detectiveFeedback.score}</span>/5
-                    </p>
-                  )}
-                </div>
-                {detectiveFeedback && (
-                  <ul className="mt-3 text-sm text-gray-800 space-y-1">
-                    {detectiveFeedback.notes.map((n, i) => (
-                      <li key={i}>• {n}</li>
+                    {(() => {
+                      const counts = scenarioHistory.reduce((acc, curr) => {
+                        acc[curr.type] = (acc[curr.type] || 0) + 1;
+                        return acc;
+                      }, {});
+
+                      let maxType = 'vision';
+                      let maxVal = 0;
+                      Object.entries(counts).forEach(([k, v]) => {
+                        if (v > maxVal) { maxVal = v; maxType = k; }
+                      });
+
+                      let result = { icon: <FaStar />, title: 'Nhà Tư Tưởng', desc: 'Bạn có cái nhìn sâu sắc về thời cuộc.' };
+                      if (maxType === 'vision') result = { icon: <FaFire />, title: 'Nhà Cách Mạng Tiên Phong', desc: 'Bạn có tầm nhìn vượt thời đại và dũng cảm dấn thân vào con đường chông gai vì mục tiêu lớn. Giống như Bác, bạn chọn con đường khó khăn nhưng vinh quang.' };
+                      if (maxType === 'heart') result = { icon: <FaHeart />, title: 'Nhà Nhân Ái', desc: 'Bạn hành động vì tình yêu thương con người. Đó là nền tảng đạo đức quan trọng, nhưng lịch sử đôi khi cần thêm sự quyết đoán của lý trí.' };
+                      if (maxType === 'safe') result = { icon: <FaShieldAlt />, title: 'Người Quan Sát Thận Trọng', desc: 'Bạn ưu tiên sự an toàn và ổn định. Điều này tốt cho cá nhân, nhưng những thay đổi vĩ đại thường đòi hỏi sự mạo hiểm.' };
+
+                      return (
+                        <>
+                          <div className="text-6xl mb-4">{result.icon}</div>
+                          <h4 className="text-2xl font-bold text-[#D63426] mb-2 uppercase">{result.title}</h4>
+                          <p className="text-gray-600 italic px-8">{result.desc}</p>
+                        </>
+                      );
+                    })()}
+                  </motion.div>
+
+                  <div className="space-y-3 text-left bg-gray-50 p-4 rounded-lg mb-6 max-h-60 overflow-y-auto">
+                    <p className="font-bold text-gray-900 text-sm uppercase border-b pb-2 mb-2">Lộ trình của bạn:</p>
+                    {scenarioHistory.map((h, i) => (
+                      <div key={i} className="flex items-start gap-3 p-2 bg-white rounded border border-gray-100">
+                        <span className="text-xl mt-1">{h.icon}</span>
+                        <div>
+                          <div className="font-bold text-gray-800 text-sm">{h.label}</div>
+                          <p className="text-xs text-gray-500 mt-0.5">{h.feedback}</p>
+                        </div>
+                      </div>
                     ))}
-                  </ul>
-                )}
+                  </div>
+
+                  <button
+                    onClick={restartInteractiveGame}
+                    className="px-8 py-3 bg-gradient-to-r from-[#D63426] to-[#B52A1E] text-white font-bold rounded-xl hover:shadow-lg hover:scale-105 transition-all"
+                  >
+                    Chơi lại
+                  </button>
+                </div>
+              ) : (
+                <div className="border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm">
+                  <div className="bg-gray-100 h-2 w-full">
+                    <motion.div
+                      className="h-full bg-[#D63426]"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${((scenarioIndex + 1) / interactiveScenarios.length) * 100}%` }}
+                      transition={{ duration: 0.5 }}
+                    />
+                  </div>
+
+                  <div className="p-6 md:p-8">
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={scenarioIndex}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <div className="mb-8">
+                          <div className="flex items-center gap-3 mb-4">
+                            <span className="px-3 py-1 bg-yellow-50 text-[#B52A1E] rounded-full text-xs font-bold uppercase tracking-wide border border-yellow-200">
+                              Tình huống {scenarioIndex + 1}/{interactiveScenarios.length}
+                            </span>
+                          </div>
+                          <h5 className="text-2xl font-bold text-gray-900 mb-3">{interactiveScenarios[scenarioIndex].title}</h5>
+                          <p className="text-gray-600 text-lg leading-relaxed italic border-l-4 border-gray-200 pl-4 py-1">
+                            "{interactiveScenarios[scenarioIndex].desc}"
+                          </p>
+                          <div className="mt-6 font-bold text-xl text-[#D63426]">
+                            {interactiveScenarios[scenarioIndex].question}
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-4">
+                          {interactiveScenarios[scenarioIndex].options.map((opt) => (
+                            <button
+                              key={opt.id}
+                              onClick={() => handleScenarioChoice(opt)}
+                              className="group flex items-center gap-5 text-left p-5 rounded-2xl border-2 border-transparent bg-gray-50 hover:bg-white hover:border-[#D63426] hover:shadow-md transition-all duration-300"
+                            >
+                              <div className="w-14 h-14 rounded-full bg-white shadow-sm flex items-center justify-center text-3xl group-hover:scale-110 transition-transform flex-shrink-0">
+                                {opt.icon}
+                              </div>
+                              <div className="flex-grow">
+                                <h6 className="font-bold text-gray-900 text-lg group-hover:text-[#D63426] transition-colors">{opt.label}</h6>
+                              </div>
+                              <div className="opacity-0 group-hover:opacity-100 text-[#D63426] transform translate-x-[-10px] group-hover:translate-x-0 transition-all font-bold text-xl">
+                                ➔
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </motion.div>
+                    </AnimatePresence>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Connect - kết nối giai đoạn */}
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8, delay: 0.25 }}
+          className="mt-10"
+        >
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-7">
+            <h3 className="text-2xl font-bold" style={{ color: '#D63426' }}>7. CONNECT</h3>
+            <div className="mt-4 border border-[#D4AF37]/30 rounded-xl overflow-hidden">
+              <div className="p-5 bg-gradient-to-r from-[#D63426] to-[#B52A1E] text-white">
+                <p className="font-bold text-lg">🌟 Chuyển biến lớn</p>
+                <p className="text-sm text-white/85 mt-1">Trước 1920: “Tìm đường cứu nước như thế nào?”</p>
+                <p className="text-sm text-white/85">Sau 1920: “CNXH + Tổ chức chính trị = con đường giải phóng”</p>
+              </div>
+              <div className="p-5 bg-white">
+                <p className="text-sm text-gray-800">
+                  ➡️ Nhiệm vụ tiếp theo (gợi mở giai đoạn sau): tuyên truyền lý luận cách mạng, chuẩn bị cho sự ra đời tổ chức lãnh đạo.
+                </p>
+                <button
+                  type="button"
+                  className="mt-4 px-5 py-3 bg-[#F5DEDE] text-[#D63426] font-bold rounded-lg border-2 border-dashed border-[#D63426] opacity-70 cursor-not-allowed"
+                  title="Chương tiếp theo sẽ được bổ sung"
+                >
+                  Khám phá 1920–1930 →
+                </button>
               </div>
             </div>
           </div>
@@ -2028,8 +2131,8 @@ const TimelineSection = () => {
             to { stroke-dashoffset: 0; }
           }
         `}</style>
-      </div>
-    </div>
+      </div >
+    </div >
   );
 };
 
