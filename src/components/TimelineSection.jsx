@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, useAnimationControls, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { FaHome, FaBook, FaGraduationCap, FaShip, FaMapMarkerAlt } from 'react-icons/fa';
 import { BiSolidQuoteAltLeft } from 'react-icons/bi';
@@ -20,11 +20,57 @@ const TimelineSection = () => {
   const [isChoosingSeat, setIsChoosingSeat] = useState(false);
   const [selectedSeat, setSelectedSeat] = useState(null);
   const [departureCountdown, setDepartureCountdown] = useState(null);
+  const [isTicketTearing, setIsTicketTearing] = useState(false);
+  const [isDepartureComplete, setIsDepartureComplete] = useState(false);
+  const [shipAnimationKey, setShipAnimationKey] = useState(0);
+
+  const audioCtxRef = useRef(null);
+  const audioPrimedRef = useRef(false);
+  const journeyPathRef = useRef(null);
+  const shipAnimRef = useRef(null);
 
   const GEO_URL = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json';
 
   const MAP_W = 900;
   const MAP_H = 460;
+
+  // Cuộn màn hình theo con tàu khi animation bắt đầu
+  useEffect(() => {
+    if (!isDepartureComplete || !journeyPathRef.current) return;
+
+    const svgElement = journeyPathRef.current;
+    const svgRect = svgElement.getBoundingClientRect();
+    const startScrollY = window.scrollY;
+    const svgTopRelativeToDocument = startScrollY + svgRect.top;
+    const svgHeight = 550; // Chiều cao của SVG
+    const animationDuration = 8000; // 8 giây - khớp với dur của animateMotion
+    const startTime = performance.now();
+
+    const animateScroll = (currentTime) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / animationDuration, 1);
+
+      // Easing function để cuộn mượt hơn
+      const easeInOutQuad = (t) => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+      const easedProgress = easeInOutQuad(progress);
+
+      // Tính toán vị trí cuộn để theo dõi con tàu
+      // Giữ con tàu ở khoảng 40% từ trên màn hình
+      const shipPositionInSvg = easedProgress * svgHeight;
+      const targetScrollY = svgTopRelativeToDocument + shipPositionInSvg - (window.innerHeight * 0.4);
+
+      window.scrollTo({
+        top: Math.max(0, targetScrollY),
+        behavior: 'instant'
+      });
+
+      if (progress < 1) {
+        requestAnimationFrame(animateScroll);
+      }
+    };
+
+    requestAnimationFrame(animateScroll);
+  }, [isDepartureComplete]);
 
   useEffect(() => {
     let cancelled = false;
@@ -225,6 +271,103 @@ const TimelineSection = () => {
   const shipControls = useAnimationControls();
   const oceanControls = useAnimationControls();
 
+  const primeTrainAudio = useCallback(async () => {
+    try {
+      if (!audioCtxRef.current) {
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        audioCtxRef.current = new Ctx();
+      }
+      await audioCtxRef.current.resume();
+      audioPrimedRef.current = true;
+    } catch {
+      // ignore (autoplay policy / unavailable)
+    }
+  }, []);
+
+  const playTrainDepartureSound = useCallback(() => {
+    const ctx = audioCtxRef.current;
+    if (!ctx || !audioPrimedRef.current) return;
+
+    const now = ctx.currentTime;
+
+    // Master gain
+    const master = ctx.createGain();
+    master.gain.setValueAtTime(0.0001, now);
+    master.gain.exponentialRampToValueAtTime(0.35, now + 0.05);
+    master.gain.exponentialRampToValueAtTime(0.0001, now + 1.8);
+    master.connect(ctx.destination);
+
+    // Steam/noise bed
+    const dur = 1.8;
+    const buffer = ctx.createBuffer(1, Math.floor(ctx.sampleRate * dur), ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < data.length; i += 1) data[i] = (Math.random() * 2 - 1) * 0.5;
+
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+
+    const band = ctx.createBiquadFilter();
+    band.type = 'bandpass';
+    band.frequency.setValueAtTime(240, now);
+    band.Q.setValueAtTime(0.9, now);
+
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.setValueAtTime(0.0001, now);
+    noiseGain.gain.exponentialRampToValueAtTime(0.22, now + 0.08);
+    noiseGain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+
+    noise.connect(band);
+    band.connect(noiseGain);
+    noiseGain.connect(master);
+
+    // Chug pulses (low oscillator with gated gain)
+    const chugOsc = ctx.createOscillator();
+    chugOsc.type = 'sawtooth';
+    chugOsc.frequency.setValueAtTime(55, now);
+
+    const chugGain = ctx.createGain();
+    chugGain.gain.setValueAtTime(0.0001, now);
+
+    const pulseCount = 7;
+    for (let i = 0; i < pulseCount; i += 1) {
+      const t = now + 0.1 + i * 0.18;
+      chugGain.gain.setValueAtTime(0.0001, t);
+      chugGain.gain.exponentialRampToValueAtTime(0.18, t + 0.03);
+      chugGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+    }
+
+    const lowpass = ctx.createBiquadFilter();
+    lowpass.type = 'lowpass';
+    lowpass.frequency.setValueAtTime(180, now);
+    lowpass.Q.setValueAtTime(0.7, now);
+
+    chugOsc.connect(lowpass);
+    lowpass.connect(chugGain);
+    chugGain.connect(master);
+
+    // Whistle (short sine sweep)
+    const whistle = ctx.createOscillator();
+    whistle.type = 'sine';
+    whistle.frequency.setValueAtTime(560, now + 0.05);
+    whistle.frequency.exponentialRampToValueAtTime(820, now + 0.35);
+
+    const whistleGain = ctx.createGain();
+    whistleGain.gain.setValueAtTime(0.0001, now + 0.05);
+    whistleGain.gain.exponentialRampToValueAtTime(0.14, now + 0.12);
+    whistleGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.55);
+
+    whistle.connect(whistleGain);
+    whistleGain.connect(master);
+
+    // Start/stop nodes
+    noise.start(now);
+    noise.stop(now + dur);
+    chugOsc.start(now);
+    chugOsc.stop(now + dur);
+    whistle.start(now);
+    whistle.stop(now + 0.6);
+  }, []);
+
   const handleParallaxMove = useCallback((e) => {
     if (isDeparting || isChoosingSeat) return;
     const rect = e.currentTarget.getBoundingClientRect();
@@ -246,28 +389,40 @@ const TimelineSection = () => {
       transition: { duration: 1.2, ease: 'easeInOut' }
     });
 
-    await shipControls.start({
+    setIsTicketTearing(true);
+    playTrainDepartureSound();
+
+    const shipAnim = shipControls.start({
       x: '120vw',
       rotate: 6,
       transition: { duration: 1.8, ease: 'easeInOut' }
     });
 
+    await Promise.all([shipAnim]);
+
+    // Đánh dấu đã hoàn thành animation khởi hành và trigger animation con tàu
+    setIsDepartureComplete(true);
+    setShipAnimationKey(prev => prev + 1); // Force remount để animation chạy lại từ đầu
+
     const nextId = 'chuong-2';
     window.location.hash = nextId;
     document.getElementById(nextId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, [oceanControls, shipControls]);
+  }, [oceanControls, playTrainDepartureSound, shipControls]);
 
   const handleOpenSeatSelection = useCallback(() => {
     if (isDeparting) return;
     setIsChoosingSeat(true);
   }, [isDeparting]);
 
-  const handleConfirmSeat = useCallback(() => {
+  const handleConfirmSeat = useCallback(async () => {
     if (isDeparting) return;
     if (!selectedSeat) return;
+    // Prime audio on user gesture to avoid autoplay blocking
+    await primeTrainAudio();
     setIsDeparting(true);
-    setDepartureCountdown(5);
-  }, [isDeparting, selectedSeat]);
+    setDepartureCountdown(null);
+    runDepartureAnimation();
+  }, [isDeparting, primeTrainAudio, runDepartureAnimation, selectedSeat]);
 
   useEffect(() => {
     if (departureCountdown === null) return;
@@ -294,7 +449,7 @@ const TimelineSection = () => {
   return (
     <div id="coi-nguon" className="w-full bg-gradient-to-b from-white to-gray-50 py-16">
       {/* HEADER */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
         transition={{ duration: 1 }}
@@ -308,12 +463,12 @@ const TimelineSection = () => {
             transition={{ duration: 0.8 }}
             className="w-1/3 flex items-center justify-center bg-transparent pl-8 relative z-10 -mr-32"
           >
-            <h1 className="text-[10rem] font-bold leading-none" 
-                style={{ 
-                  fontFamily: 'Arial, sans-serif',
-                  color: '#D63426',
-                  letterSpacing: '-0.05em'
-                }}>
+            <h1 className="text-[10rem] font-bold leading-none"
+              style={{
+                fontFamily: 'Arial, sans-serif',
+                color: '#D63426',
+                letterSpacing: '-0.05em'
+              }}>
               1890-1911
             </h1>
           </motion.div>
@@ -325,8 +480,8 @@ const TimelineSection = () => {
             transition={{ duration: 0.8 }}
             className="w-1/2"
           >
-            <img 
-              src="https://cdn3.ivivu.com/2024/09/lang-sen-que-bac-ivivu-1.png" 
+            <img
+              src="https://cdn3.ivivu.com/2024/09/lang-sen-que-bac-ivivu-1.png"
               alt="Lang Sen"
               className="w-full h-[500px] object-cover grayscale"
               style={{ filter: 'grayscale(100%)' }}
@@ -346,29 +501,29 @@ const TimelineSection = () => {
           {/* Left Column - Title and Info */}
           <div>
             <div className="w-full h-px bg-gray-300 mb-6"></div>
-            <motion.h2 
+            <motion.h2
               initial={{ opacity: 0, x: -20 }}
               whileInView={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="text-4xl font-bold mb-2" 
+              className="text-4xl font-bold mb-2"
               style={{ fontFamily: 'Arial, sans-serif', color: '#D63426' }}
             >
               "Tại sao người Pháp không phải gánh, mà dân ta phải gánh?"
             </motion.h2>
-            <motion.p 
+            <motion.p
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               transition={{ delay: 0.4 }}
-              className="text-sm mb-6" 
+              className="text-sm mb-6"
               style={{ fontFamily: 'Arial, sans-serif', color: '#D63426' }}
             >
               Tại Làng Sen, Nam Đàn, Nghệ An
             </motion.p>
-            <motion.p 
+            <motion.p
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               transition={{ delay: 0.6 }}
-              className="text-sm text-gray-400 italic mt-8" 
+              className="text-sm text-gray-400 italic mt-8"
               style={{ fontFamily: 'Arial, sans-serif' }}
             >
               "Nước mất, nhà tan, biết sống làm chi?"
@@ -382,7 +537,7 @@ const TimelineSection = () => {
               className="w-1 bg-gradient-to-b from-[#D63426] to-transparent mt-8 ml-4"
             />
           </div>
-          
+
           {/* Right Column - Content with Timeline */}
           <div className="relative border-l-2 border-[#D63426]/20 pl-8">
             {/* Đoạn 1: Những năm tháng ấu thơ */}
@@ -470,11 +625,11 @@ const TimelineSection = () => {
         >
           <div className="max-w-2xl bg-gradient-to-br from-orange-50 to-yellow-50 border-l-4 border-[#D63426] shadow-xl rounded-lg p-8 relative">
             <div className="absolute -top-6 -left-4 text-6xl text-[#D63426] opacity-30 font-serif">"</div>
-            
+
             <p className="text-lg font-serif italic text-gray-800 leading-relaxed mb-6 relative z-10">
               "Tôi muốn đi ra ngoài, xem nước Pháp và các nước khác. Sau khi xem xét họ làm như thế nào, tôi sẽ trở về giúp đồng bào chúng tôi."
             </p>
-            
+
             <div className="border-t-2 border-[#D63426]/20 pt-4">
               <div className="flex flex-col items-end">
                 <span className="font-bold text-[#D63426] uppercase tracking-wider text-sm">Hồ Chí Minh</span>
@@ -489,20 +644,20 @@ const TimelineSection = () => {
 
       {/* CONTEXT - Visual Timeline */}
       <div className="max-w-6xl mx-auto px-6 mb-16">
-        <motion.h2 
+        <motion.h2
           initial={{ opacity: 0, y: -20 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="text-3xl font-bold mb-12 text-center" 
+          className="text-3xl font-bold mb-12 text-center"
           style={{ fontFamily: 'Arial, sans-serif', color: '#D63426' }}
         >
           Bối Cảnh Lịch Sử
         </motion.h2>
-        
+
         <motion.div className="relative">
           {/* Central Vertical Line */}
           <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-gradient-to-b from-[#D63426] to-[#B52A1E] -ml-px" />
-          
+
           {/* Vertical Timeline */}
           <div className="space-y-0">
             {[
@@ -522,7 +677,7 @@ const TimelineSection = () => {
               >
                 {/* Left Content (for even index) */}
                 {index % 2 === 0 && (
-                  <motion.div 
+                  <motion.div
                     whileHover={{ scale: 1.02, y: -5 }}
                     transition={{ type: "spring", stiffness: 300 }}
                     className={`w-5/12 bg-gradient-to-br ${item.highlight ? 'from-yellow-50 to-orange-50 border-yellow-500' : 'from-white to-red-50 border-[#D63426]'} p-6 rounded-xl shadow-lg border-l-4 hover:shadow-2xl transition-all mr-auto`}
@@ -557,7 +712,7 @@ const TimelineSection = () => {
 
                 {/* Right Content (for odd index) */}
                 {index % 2 === 1 && (
-                  <motion.div 
+                  <motion.div
                     whileHover={{ scale: 1.02, y: -5 }}
                     transition={{ type: "spring", stiffness: 300 }}
                     className={`w-5/12 bg-gradient-to-br ${item.highlight ? 'from-yellow-50 to-orange-50 border-yellow-500' : 'from-white to-red-50 border-[#D63426]'} p-6 rounded-xl shadow-lg border-l-4 hover:shadow-2xl transition-all ml-auto`}
@@ -578,15 +733,15 @@ const TimelineSection = () => {
 
       {/* CONTENT - Tabs */}
       <div className="max-w-6xl mx-auto px-6 mb-16">
-        <motion.h2 
+        <motion.h2
           initial={{ opacity: 0, y: -20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          className="text-3xl font-bold mb-8 text-center" 
+          className="text-3xl font-bold mb-8 text-center"
           style={{ fontFamily: 'Arial, sans-serif', color: '#D63426' }}
         >
           Nội Dung Chi Tiết
         </motion.h2>
-        
+
         {/* Tab Headers */}
         <div className="flex gap-4 mb-6 overflow-x-auto">
           {tabs.map((tab) => (
@@ -595,11 +750,10 @@ const TimelineSection = () => {
               onClick={() => setActiveTab(tab.id)}
               whileHover={{ scale: 1.05, y: -2 }}
               whileTap={{ scale: 0.98 }}
-              className={`flex items-center gap-2 px-6 py-3 rounded-lg font-bold whitespace-nowrap transition-all ${
-                activeTab === tab.id
-                  ? 'bg-gradient-to-r from-[#D63426] to-[#B52A1E] text-white shadow-lg'
-                  : 'bg-white border-2 border-gray-200 text-gray-700 hover:border-[#D4AF37] hover:shadow-md'
-              }`}
+              className={`flex items-center gap-2 px-6 py-3 rounded-lg font-bold whitespace-nowrap transition-all ${activeTab === tab.id
+                ? 'bg-gradient-to-r from-[#D63426] to-[#B52A1E] text-white shadow-lg'
+                : 'bg-white border-2 border-gray-200 text-gray-700 hover:border-[#D4AF37] hover:shadow-md'
+                }`}
               style={{ fontFamily: 'Arial, sans-serif' }}
             >
               {tab.icon}
@@ -622,34 +776,34 @@ const TimelineSection = () => {
                 <div className="w-1 h-8 bg-gradient-to-b from-[#D63426] to-[#D4AF37]"></div>
                 <h3 className="text-2xl font-bold" style={{ color: '#D63426' }}>Hành Trình Lớn Lên</h3>
               </div>
-              
+
               {[
-                { 
-                  year: '1890-1901', 
-                  title: 'Thời thơ ấu ở Xứ Nghệ & Huế', 
+                {
+                  year: '1890-1901',
+                  title: 'Thời thơ ấu ở Xứ Nghệ & Huế',
                   details: [
-                    'Sinh tại làng Hoàng Trù (Quê ngoại), năm 1901 về Làng Sen (Quê nội).', 
-                    'Thừa hưởng truyền thống nho học uyên thâm từ cha (Cụ Nguyễn Sinh Sắc).', 
+                    'Sinh tại làng Hoàng Trù (Quê ngoại), năm 1901 về Làng Sen (Quê nội).',
+                    'Thừa hưởng truyền thống nho học uyên thâm từ cha (Cụ Nguyễn Sinh Sắc).',
                     '1901: Biến cố lớn - Mẹ mất tại Huế, bắt đầu thấu hiểu nỗi đau đời.'
                   ],
                   color: 'from-red-500/10 to-orange-500/10'
                 },
-                { 
-                  year: '1905-1909', 
-                  title: 'Ánh sáng và Bạo quyền', 
+                {
+                  year: '1905-1909',
+                  title: 'Ánh sáng và Bạo quyền',
                   details: [
-                    'Học trường Quốc học Huế. Tiếp thu văn hóa phương Tây.', 
-                    '1908: Tham gia phong trào chống thuế Trung Kỳ → Bị đuổi học.', 
+                    'Học trường Quốc học Huế. Tiếp thu văn hóa phương Tây.',
+                    '1908: Tham gia phong trào chống thuế Trung Kỳ → Bị đuổi học.',
                     'Nhận ra: "Cải lương" hay "Cầu viện" đều bế tắc.'
                   ],
                   color: 'from-yellow-500/10 to-red-500/10'
                 },
-                { 
-                  year: '1910-1911', 
-                  title: 'Dục Thanh & Quyết định lịch sử', 
+                {
+                  year: '1910-1911',
+                  title: 'Dục Thanh & Quyết định lịch sử',
                   details: [
-                    'Dạy học tại trường Dục Thanh (Phan Thiết) - truyền lửa cho học trò.', 
-                    'Đi vào Sài Gòn, nhìn thấy sự phồn hoa đối lập với nghèo đói.', 
+                    'Dạy học tại trường Dục Thanh (Phan Thiết) - truyền lửa cho học trò.',
+                    'Đi vào Sài Gòn, nhìn thấy sự phồn hoa đối lập với nghèo đói.',
                     '5/6/1911: Lên tàu Amiral Latouche-Tréville với tên Văn Ba.'
                   ],
                   color: 'from-blue-500/10 to-indigo-500/10'
@@ -671,8 +825,8 @@ const TimelineSection = () => {
                   </div>
                   <ul className="space-y-2 ml-4">
                     {period.details.map((detail, i) => (
-                      <motion.li 
-                        key={i} 
+                      <motion.li
+                        key={i}
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: index * 0.15 + i * 0.1 }}
@@ -686,7 +840,7 @@ const TimelineSection = () => {
               ))}
 
               {/* Source citation */}
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.6 }}
@@ -705,30 +859,30 @@ const TimelineSection = () => {
                 <div className="w-1 h-8 bg-gradient-to-b from-[#D63426] to-[#D4AF37]"></div>
                 <h3 className="text-2xl font-bold" style={{ color: '#D63426' }}>Những Ảnh Hưởng Định Hình</h3>
               </div>
-              
+
               <div className="grid grid-cols-3 gap-6">
                 {[
-                  { 
-                    icon: 'https://upload.wikimedia.org/wikipedia/vi/0/08/Nguyensinhsac.jpg', 
-                    title: 'CHA', 
-                    subtitle: 'Nguyễn Sinh Sắc', 
-                    content: 'Tinh thần yêu nước', 
+                  {
+                    icon: 'https://upload.wikimedia.org/wikipedia/vi/0/08/Nguyensinhsac.jpg',
+                    title: 'CHA',
+                    subtitle: 'Nguyễn Sinh Sắc',
+                    content: 'Tinh thần yêu nước',
                     quote: 'Con phải học hành cho nên người, để giúp nước, giúp dân',
                     gradient: 'from-red-500 to-orange-500'
                   },
-                  { 
-                    icon: '📚', 
-                    title: 'THẦY GIÁO', 
-                    subtitle: 'Vuông, Giảng', 
-                    content: 'Kiến thức & lý tưởng', 
+                  {
+                    icon: '📚',
+                    title: 'THẦY GIÁO',
+                    subtitle: 'Vuông, Giảng',
+                    content: 'Kiến thức & lý tưởng',
                     quote: 'Học để làm người, làm người để phụng sự dân tộc',
                     gradient: 'from-yellow-500 to-amber-500'
                   },
-                  { 
-                    icon: 'https://cdn.giaoduc.net.vn/images/4de4c68b74530ee1841e187837764325c1ca1d4edd36241ff23121f64a06b40c91d553ef473aa90c361699425ad87f1a86372b6df2fa54ed05a39abefac2ff56be006905412b27d4feecd5babff4c1c6/khang_thue.png.webp', 
-                    title: 'DÂN TỘC', 
-                    subtitle: 'Nỗi đau', 
-                    content: 'của dân lao động', 
+                  {
+                    icon: 'https://cdn.giaoduc.net.vn/images/4de4c68b74530ee1841e187837764325c1ca1d4edd36241ff23121f64a06b40c91d553ef473aa90c361699425ad87f1a86372b6df2fa54ed05a39abefac2ff56be006905412b27d4feecd5babff4c1c6/khang_thue.png.webp',
+                    title: 'DÂN TỘC',
+                    subtitle: 'Nỗi đau',
+                    content: 'của dân lao động',
                     quote: 'Con đường cũ không còn, phải tìm con đường mới',
                     gradient: 'from-green-600 to-emerald-600'
                   }
@@ -743,7 +897,7 @@ const TimelineSection = () => {
                   >
                     {/* Decorative background gradient on hover */}
                     <div className={`absolute inset-0 bg-gradient-to-br ${influence.gradient} opacity-0 group-hover:opacity-5 transition-opacity`}></div>
-                    
+
                     <div className="relative z-10">
                       <div className="mb-3 text-center transform group-hover:scale-110 transition-transform">
                         {influence.icon.startsWith('http') ? (
@@ -763,7 +917,7 @@ const TimelineSection = () => {
                 ))}
               </div>
 
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.8 }}
@@ -782,36 +936,36 @@ const TimelineSection = () => {
                 <div className="w-1 h-8 bg-gradient-to-b from-[#D63426] to-[#D4AF37]"></div>
                 <h3 className="text-2xl font-bold" style={{ color: '#D63426' }}>Sự Kiện Quan Trọng</h3>
               </div>
-              
+
               <div className="space-y-6 relative">
                 {/* Timeline line */}
                 <div className="absolute left-10 top-0 bottom-0 w-0.5 bg-gradient-to-b from-[#D63426] via-[#D4AF37] to-[#B52A1E]"></div>
-                
+
                 {[
-                  { 
-                    year: '1905', 
-                    event: 'Phong trào Đông Du & Duy Tân', 
+                  {
+                    year: '1905',
+                    event: 'Phong trào Đông Du & Duy Tân',
                     impact: 'Bác khâm phục lòng yêu nước nhưng không tán thành cách làm (dựa vào Nhật).',
                     color: 'from-red-500 to-red-600',
                     image: '🏯'
                   },
-                  { 
-                    year: '1908', 
-                    event: 'Biểu tình chống thuế Trung Kỳ', 
+                  {
+                    year: '1908',
+                    event: 'Biểu tình chống thuế Trung Kỳ',
                     impact: 'Trực tiếp chứng kiến sự đàn áp đẫm máu. Hiểu rõ bản chất thực dân.',
                     color: 'from-orange-500 to-red-500',
                     image: '✊'
                   },
-                  { 
-                    year: '1910', 
-                    event: 'Dạy học ở Trường Dục Thanh', 
+                  {
+                    year: '1910',
+                    event: 'Dạy học ở Trường Dục Thanh',
                     impact: 'Gieo mầm yêu nước cho thế hệ trẻ qua các bài thể dục và lịch sử.',
                     color: 'from-yellow-500 to-orange-500',
                     image: '📖'
                   },
-                  { 
-                    year: '1911', 
-                    event: 'Rời bến cảng Nhà Rồng', 
+                  {
+                    year: '1911',
+                    event: 'Rời bến cảng Nhà Rồng',
                     impact: 'Mở ra kỷ nguyên mới: Tự mình đi tìm chân lý thay vì chờ đợi.',
                     color: 'from-blue-500 to-indigo-600',
                     image: '🚢'
@@ -824,15 +978,15 @@ const TimelineSection = () => {
                     transition={{ delay: index * 0.15 }}
                     className="flex gap-4 items-start relative group"
                   >
-                    <motion.div 
+                    <motion.div
                       whileHover={{ scale: 1.15, rotate: 360 }}
                       transition={{ type: "spring", stiffness: 200 }}
                       className={`flex-shrink-0 w-20 h-20 bg-gradient-to-br ${item.color} rounded-full flex items-center justify-center text-white font-bold text-lg shadow-xl relative z-10 cursor-pointer`}
                     >
                       {item.year}
                     </motion.div>
-                    
-                    <motion.div 
+
+                    <motion.div
                       whileHover={{ x: 5, boxShadow: '0 10px 30px rgba(212, 175, 55, 0.3)' }}
                       className="flex-1 bg-white p-5 rounded-lg shadow-md border-l-4 border-[#D4AF37] hover:border-[#D63426] transition-all"
                     >
@@ -868,7 +1022,7 @@ const TimelineSection = () => {
                 <p className="text-xs text-[#D63426] font-semibold">— Hồ Chí Minh Toàn tập, Tập 1</p>
               </motion.div>
 
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 1 }}
@@ -887,7 +1041,7 @@ const TimelineSection = () => {
                 <div className="w-1 h-8 bg-gradient-to-b from-[#D63426] to-[#D4AF37]"></div>
                 <h3 className="text-2xl font-bold" style={{ color: '#D63426' }}>Bài Học Từ Giai Đoạn Này</h3>
               </div>
-              
+
               <div className="space-y-4">
                 {[
                   { text: 'Yêu nước phải xuất phát từ thực tế cuộc sống', icon: '' },
@@ -903,7 +1057,7 @@ const TimelineSection = () => {
                     whileHover={{ scale: 1.02, x: 5 }}
                     className="flex items-start gap-4 bg-gradient-to-r from-green-50 to-emerald-50 p-5 rounded-lg border-l-4 border-green-500 hover:border-[#D4AF37] shadow-sm hover:shadow-md transition-all cursor-pointer group"
                   >
-                    <motion.span 
+                    <motion.span
                       className="text-3xl group-hover:scale-125 transition-transform"
                       animate={{ rotate: [0, 10, -10, 0] }}
                       transition={{ duration: 2, repeat: Infinity, delay: index * 0.2 }}
@@ -913,7 +1067,7 @@ const TimelineSection = () => {
                     <p className="text-lg text-gray-800 flex-1">{lesson.text}</p>
                   </motion.div>
                 ))}
-                
+
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -923,7 +1077,7 @@ const TimelineSection = () => {
                   <p className="text-lg mb-4 font-semibold text-gray-800" style={{ fontFamily: 'Arial, sans-serif' }}>
                     Nếu là bạn sống trong thời kỳ đó, bạn sẽ làm gì?
                   </p>
-                  <motion.button 
+                  <motion.button
                     whileHover={{ scale: 1.05, boxShadow: '0 10px 30px rgba(214, 52, 38, 0.3)' }}
                     whileTap={{ scale: 0.98 }}
                     className="px-8 py-3 bg-gradient-to-r from-[#D63426] to-[#B52A1E] text-white rounded-lg font-bold hover:from-[#B52A1E] hover:to-[#D63426] transition-all shadow-md"
@@ -965,6 +1119,7 @@ const TimelineSection = () => {
           <div aria-hidden="true" className="absolute inset-0 bg-black/40" />
           <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-r from-[#D63426]/55 to-[#B52A1E]/35" />
 
+
           {/* Lớp giữa: Con tàu */}
           <motion.div
             className="absolute bottom-10 left-10"
@@ -988,106 +1143,241 @@ const TimelineSection = () => {
             className="relative z-10 p-8 md:p-10"
             style={{ x: textX, y: textY }}
           >
-            <div className="max-w-2xl">
-              <h3 className="text-3xl font-bold mb-4 flex items-center gap-3 text-white">
-                <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/15 border border-white/20">
-                  <FaShip className="text-xl" />
-                </span>
-                CÁNH BUỒM RA KHƠI • 1911
-              </h3>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+              {/* Left: controls */}
+              <div className="lg:col-span-7">
+                <h3 className="text-3xl font-bold mb-4 flex items-center gap-3 text-white">
+                  <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white/15 border border-white/20">
+                    <FaShip className="text-xl" />
+                  </span>
+                  CÁNH BUỒM RA KHƠI • 1911
+                </h3>
 
-              <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-6">
-
-                <div className="bg-white/15 p-4 rounded-lg mb-5 border border-white/15">
-                  <p className="text-xl font-bold italic text-white">"Ở nước ngoài, người ta cứu nước bằng cách nào?"</p>
-                </div>
-
-                {!isChoosingSeat ? (
-                  <button
-                    onClick={handleOpenSeatSelection}
-                    disabled={isDeparting}
-                    className="w-full py-4 bg-white text-[#D63426] rounded-lg font-bold text-lg hover:bg-gray-100 transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
-                  >
-                    {isDeparting ? 'Đang chuẩn bị…' : 'Chọn ghế để khởi hành →'}
-                  </button>
-                ) : (
-                  <div className="bg-white/10 border border-white/20 rounded-xl p-5">
-                    <div className="flex items-center justify-between gap-4 mb-4">
-                      <div>
-                        <p className="text-white font-bold text-lg">Chọn ghế trên tàu</p>
-                        <p className="text-white/80 text-sm">Chạm vào ghế để chọn, rồi xác nhận để khởi hành.</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-white/80 text-xs uppercase tracking-wider">Ghế đã chọn</p>
-                        <p className="text-white text-lg font-bold">{selectedSeat ?? '—'}</p>
-                      </div>
-                    </div>
-
-                    <div className="rounded-lg border border-white/15 bg-black/10 p-4">
-                      <div className="flex items-center justify-between text-white/70 text-xs mb-3">
-                        <span>Mũi tàu</span>
-                        <span>Lối đi</span>
-                        <span>Đuôi tàu</span>
-                      </div>
-
-                      <div className="space-y-2">
-                        {seatRows.map((row) => (
-                          <div key={row.rowNum} className="grid grid-cols-5 gap-2 items-center">
-                            {row.left.map((seat) => (
-                              <button
-                                key={seat}
-                                type="button"
-                                disabled={isDeparting}
-                                onClick={() => setSelectedSeat(seat)}
-                                className={
-                                  `h-12 rounded-lg border text-sm font-bold transition-colors ` +
-                                  (selectedSeat === seat
-                                    ? 'bg-white text-[#D63426] border-white'
-                                    : 'bg-white/10 text-white border-white/25 hover:bg-white/15') +
-                                  (isDeparting ? ' opacity-70 cursor-not-allowed' : '')
-                                }
-                                aria-pressed={selectedSeat === seat}
-                              >
-                                {seat}
-                              </button>
-                            ))}
-
-                            <div aria-hidden="true" className="h-12 rounded-md bg-white/5 border border-white/10" />
-
-                            {row.right.map((seat) => (
-                              <button
-                                key={seat}
-                                type="button"
-                                disabled={isDeparting}
-                                onClick={() => setSelectedSeat(seat)}
-                                className={
-                                  `h-12 rounded-lg border text-sm font-bold transition-colors ` +
-                                  (selectedSeat === seat
-                                    ? 'bg-white text-[#D63426] border-white'
-                                    : 'bg-white/10 text-white border-white/25 hover:bg-white/15') +
-                                  (isDeparting ? ' opacity-70 cursor-not-allowed' : '')
-                                }
-                                aria-pressed={selectedSeat === seat}
-                              >
-                                {seat}
-                              </button>
-                            ))}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={handleConfirmSeat}
-                      disabled={isDeparting || !selectedSeat}
-                      className="mt-4 w-full py-4 bg-white text-[#D63426] rounded-lg font-bold text-lg hover:bg-gray-100 transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
-                    >
-                      {isDeparting
-                        ? (departureCountdown ? `Khởi hành sau ${departureCountdown}s…` : 'Đang khởi hành…')
-                        : 'Xác nhận chọn chỗ'}
-                    </button>
+                <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-6">
+                  <div className="bg-white/15 p-4 rounded-lg mb-5 border border-white/15">
+                    <p className="text-xl font-bold italic text-white">"Ở nước ngoài, người ta cứu nước bằng cách nào?"</p>
                   </div>
-                )}
+
+                  {!isChoosingSeat ? (
+                    <button
+                      onClick={handleOpenSeatSelection}
+                      disabled={isDeparting}
+                      className="w-full py-4 bg-white text-[#D63426] rounded-lg font-bold text-lg hover:bg-gray-100 transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      {isDeparting ? 'Đang chuẩn bị…' : 'Chọn ghế để khởi hành →'}
+                    </button>
+                  ) : (
+                    <div className="bg-white/10 border border-white/20 rounded-xl p-5">
+                      <div className="flex items-center justify-between gap-4 mb-4">
+                        <div>
+                          <p className="text-white font-bold text-lg">Chọn ghế trên tàu</p>
+                          <p className="text-white/80 text-sm">Chạm vào ghế để chọn, rồi xác nhận để khởi hành.</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-white/80 text-xs uppercase tracking-wider">Ghế đã chọn</p>
+                          <p className="text-white text-lg font-bold">{selectedSeat ?? '—'}</p>
+                        </div>
+                      </div>
+
+                      <div className="rounded-lg border border-white/15 bg-black/10 p-4">
+                        <div className="flex items-center justify-between text-white/70 text-xs mb-3">
+                          <span>Mũi tàu</span>
+                          <span>Lối đi</span>
+                          <span>Đuôi tàu</span>
+                        </div>
+
+                        <div className="space-y-2">
+                          {seatRows.map((row) => (
+                            <div key={row.rowNum} className="grid grid-cols-5 gap-2 items-center">
+                              {row.left.map((seat) => (
+                                <button
+                                  key={seat}
+                                  type="button"
+                                  disabled={isDeparting}
+                                  onClick={() => setSelectedSeat(seat)}
+                                  className={
+                                    `h-12 rounded-lg border text-sm font-bold transition-colors ` +
+                                    (selectedSeat === seat
+                                      ? 'bg-white text-[#D63426] border-white'
+                                      : 'bg-white/10 text-white border-white/25 hover:bg-white/15') +
+                                    (isDeparting ? ' opacity-70 cursor-not-allowed' : '')
+                                  }
+                                  aria-pressed={selectedSeat === seat}
+                                >
+                                  {seat}
+                                </button>
+                              ))}
+
+                              <div aria-hidden="true" className="h-12 rounded-md bg-white/5 border border-white/10" />
+
+                              {row.right.map((seat) => (
+                                <button
+                                  key={seat}
+                                  type="button"
+                                  disabled={isDeparting}
+                                  onClick={() => setSelectedSeat(seat)}
+                                  className={
+                                    `h-12 rounded-lg border text-sm font-bold transition-colors ` +
+                                    (selectedSeat === seat
+                                      ? 'bg-white text-[#D63426] border-white'
+                                      : 'bg-white/10 text-white border-white/25 hover:bg-white/15') +
+                                    (isDeparting ? ' opacity-70 cursor-not-allowed' : '')
+                                  }
+                                  aria-pressed={selectedSeat === seat}
+                                >
+                                  {seat}
+                                </button>
+                              ))}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={handleConfirmSeat}
+                        disabled={isDeparting || !selectedSeat}
+                        className="mt-4 w-full py-4 bg-white text-[#D63426] rounded-lg font-bold text-lg hover:bg-gray-100 transition-colors flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                      >
+                        {isDeparting
+                          ? (departureCountdown ? `Khởi hành sau ${departureCountdown}s…` : 'Đang khởi hành…')
+                          : 'Xác nhận chọn chỗ'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Right: ticket */}
+              <div className="lg:col-span-5">
+                <div className="relative">
+                  {/* Full ticket (normal) */}
+                  {!isTicketTearing && (
+                    <div className="bg-[#F5DEDE] border-[3px] border-dashed border-[#D63426] rounded-2xl shadow-xl overflow-hidden">
+                      <div className="p-5 bg-white/80 border-b border-[#D63426]/25">
+                        <p className="text-xs uppercase tracking-widest text-[#D63426] font-bold">VÉ TÀU • 1911</p>
+                        <p className="text-2xl font-extrabold text-[#D63426]" style={{ fontFamily: 'Arial, sans-serif' }}>BẾN NHÀ RỒNG</p>
+                      </div>
+
+                      <div className="p-5 bg-white/70">
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <p className="text-gray-500">Hành khách</p>
+                            <p className="font-bold text-gray-900">Văn Ba</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-500">Ngày</p>
+                            <p className="font-bold text-gray-900">05/06/1911</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-500">Đi</p>
+                            <p className="font-bold text-gray-900">Sài Gòn</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-500">Đến (chặng đầu)</p>
+                            <p className="font-bold text-gray-900">Marseille</p>
+                          </div>
+                        </div>
+
+                        <div className="mt-4 pt-4 border-t border-[#D63426]/20 flex items-center justify-between">
+                          <div>
+                            <p className="text-gray-500 text-xs uppercase tracking-wider">Hạng</p>
+                            <p className="font-bold text-gray-900">Hạng 3</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-gray-500 text-xs uppercase tracking-wider">Chỗ</p>
+                            <p className="font-bold text-gray-900">{selectedSeat ?? '—'}</p>
+                          </div>
+                        </div>
+
+                        <div className="mt-4 flex items-center justify-between gap-3">
+                          <div className="flex-1 h-px bg-[#D63426]/25" />
+                          <div className="px-3 py-1 rounded-full border border-[#D63426]/35 text-[#D63426] text-xs font-bold">ĐÃ KIỂM</div>
+                          <div className="flex-1 h-px bg-[#D63426]/25" />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Torn ticket (animated halves) */}
+                  {isTicketTearing && (
+                    <div className="relative">
+                      {/* Left half */}
+                      <motion.div
+                        initial={{ x: 0, rotate: 0, opacity: 1 }}
+                        animate={{ x: -26, rotate: -7, opacity: 0 }}
+                        transition={{ duration: 0.9, ease: 'easeInOut' }}
+                        className="absolute inset-0"
+                        style={{ clipPath: 'inset(0 50% 0 0)' }}
+                      >
+                        <div className="bg-[#F5DEDE] border-[3px] border-dashed border-[#D63426] rounded-2xl shadow-xl overflow-hidden">
+                          <div className="p-5 bg-white/80 border-b border-[#D63426]/25">
+                            <p className="text-xs uppercase tracking-widest text-[#D63426] font-bold">VÉ TÀU • 1911</p>
+                            <p className="text-2xl font-extrabold text-[#D63426]" style={{ fontFamily: 'Arial, sans-serif' }}>BẾN NHÀ RỒNG</p>
+                          </div>
+                          <div className="p-5 bg-white/70">
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                              <div>
+                                <p className="text-gray-500">Hành khách</p>
+                                <p className="font-bold text-gray-900">Văn Ba</p>
+                              </div>
+                              <div>
+                                <p className="text-gray-500">Ngày</p>
+                                <p className="font-bold text-gray-900">05/06/1911</p>
+                              </div>
+                            </div>
+                            <div className="mt-4 pt-4 border-t border-[#D63426]/20 flex items-center justify-between">
+                              <div>
+                                <p className="text-gray-500 text-xs uppercase tracking-wider">Hạng</p>
+                                <p className="font-bold text-gray-900">Hạng 3</p>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-gray-500 text-xs uppercase tracking-wider">Chỗ</p>
+                                <p className="font-bold text-gray-900">{selectedSeat ?? '—'}</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+
+                      {/* Right half */}
+                      <motion.div
+                        initial={{ x: 0, rotate: 0, opacity: 1 }}
+                        animate={{ x: 26, rotate: 7, opacity: 0 }}
+                        transition={{ duration: 0.9, ease: 'easeInOut' }}
+                        className="absolute inset-0"
+                        style={{ clipPath: 'inset(0 0 0 50%)' }}
+                      >
+                        <div className="bg-[#F5DEDE] border-[3px] border-dashed border-[#D63426] rounded-2xl shadow-xl overflow-hidden">
+                          <div className="p-5 bg-white/80 border-b border-[#D63426]/25">
+                            <p className="text-xs uppercase tracking-widest text-[#D63426] font-bold">VÉ TÀU • 1911</p>
+                            <p className="text-2xl font-extrabold text-[#D63426]" style={{ fontFamily: 'Arial, sans-serif' }}>BẾN NHÀ RỒNG</p>
+                          </div>
+                          <div className="p-5 bg-white/70">
+                            <div className="grid grid-cols-2 gap-4 text-sm">
+                              <div>
+                                <p className="text-gray-500">Đi</p>
+                                <p className="font-bold text-gray-900">Sài Gòn</p>
+                              </div>
+                              <div>
+                                <p className="text-gray-500">Đến (chặng đầu)</p>
+                                <p className="font-bold text-gray-900">Marseille</p>
+                              </div>
+                            </div>
+                            <div className="mt-4 pt-4 border-t border-[#D63426]/20 flex items-center justify-between">
+                              <div className="px-3 py-1 rounded-full border border-[#D63426]/35 text-[#D63426] text-xs font-bold">ĐÃ KIỂM</div>
+                              <div className="text-xs text-gray-600 italic">Khởi hành…</div>
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+
+                      {/* Tear line */}
+                      <div aria-hidden="true" className="absolute inset-0 flex items-stretch justify-center pointer-events-none">
+                        <div className="w-[2px] bg-[#D63426] opacity-40" style={{ maskImage: 'repeating-linear-gradient(to bottom, rgba(0,0,0,1) 0 8px, rgba(0,0,0,0) 8px 14px)' }} />
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </motion.div>
@@ -1105,7 +1395,7 @@ const TimelineSection = () => {
 
           {/* Countdown overlay (5s) */}
           {typeof departureCountdown === 'number' && departureCountdown > 0 && (
-            <div className="absolute inset-0 z-20 flex items-center justify-center">
+            <div className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none">
               <div className="bg-black/50 border border-white/20 text-white px-8 py-6 rounded-2xl backdrop-blur-sm text-center shadow-2xl">
                 <p className="text-sm uppercase tracking-wider text-white/80 mb-1">Chuẩn bị rời bến</p>
                 <p className="text-5xl font-extrabold leading-none">{departureCountdown}</p>
@@ -1117,6 +1407,73 @@ const TimelineSection = () => {
       </motion.div>
 
       {/* CHƯƠNG II: 1911-1920 - HÀNH TRÌNH TÌM ĐƯỜNG */}
+      <div className="flex justify-center mt-14" aria-hidden="true">
+        <svg
+          ref={journeyPathRef}
+          width="100"
+          height="550"
+          viewBox="0 0 100 550"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className="opacity-90"
+        >
+          <path
+            d="M 50 0 
+               C 50 25, 85 45, 75 75 
+               S 15 105, 25 135 
+               S 80 165, 70 195 
+               S 20 225, 30 255 
+               S 75 285, 65 315 
+               S 25 345, 35 375 
+               S 80 405, 70 435 
+               S 30 465, 40 495 
+               S 50 525, 50 550"
+            stroke="#D63426"
+            strokeWidth="3"
+            strokeDasharray="15 10"
+            strokeLinecap="round"
+            fill="none"
+          />
+          {/* Icon con tàu chạy dọc theo đường - sử dụng Framer Motion */}
+          {isDepartureComplete && (
+            <motion.g
+              key={`ship-journey-${shipAnimationKey}`}
+              style={{
+                offsetPath: `path("M 50 0 C 50 25, 85 45, 75 75 S 15 105, 25 135 S 80 165, 70 195 S 20 225, 30 255 S 75 285, 65 315 S 25 345, 35 375 S 80 405, 70 435 S 30 465, 40 495 S 50 525, 50 550")`,
+                offsetRotate: 'auto 90deg',
+                filter: 'drop-shadow(0 0 10px rgba(214, 52, 38, 0.9))'
+              }}
+              initial={{ offsetDistance: '0%' }}
+              animate={{ offsetDistance: '100%' }}
+              transition={{ duration: 8, ease: 'easeInOut' }}
+            >
+              {/* Ship icon */}
+              <g transform="translate(-24, -16) scale(1.8)">
+                {/* Thân tàu */}
+                <path
+                  d="M 2 12 L 6 16 L 22 16 L 26 12 L 2 12 Z"
+                  fill="#D63426"
+                />
+                {/* Cabin */}
+                <rect x="8" y="8" width="12" height="4" rx="1" fill="#B52A1E" />
+                {/* Ống khói */}
+                <rect x="16" y="4" width="3" height="4" fill="#333" />
+                {/* Khói */}
+                <ellipse cx="17.5" cy="2" rx="2" ry="1.5" fill="#666" opacity="0.7">
+                  <animate attributeName="opacity" values="0.7;0.3;0.7" dur="1s" repeatCount="indefinite" />
+                </ellipse>
+                <ellipse cx="19" cy="1" rx="1.5" ry="1" fill="#888" opacity="0.5">
+                  <animate attributeName="opacity" values="0.5;0.2;0.5" dur="1.2s" repeatCount="indefinite" />
+                </ellipse>
+                {/* Cột buồm */}
+                <rect x="11" y="2" width="1" height="6" fill="#8B4513" />
+                {/* Buồm */}
+                <path d="M 12 2 L 12 7 L 18 5 Z" fill="#FFF5E1" stroke="#D4AF37" strokeWidth="0.5" />
+              </g>
+            </motion.g>
+          )}
+        </svg>
+      </div>
       <div id="chuong-2" className="max-w-6xl mx-auto px-6 mt-20">
         {/* Header */}
         <motion.div
