@@ -145,12 +145,12 @@ const TimelineSection = () => {
     {
       id: 'newyork',
       label: 'New York',
-      year: '1913–1917',
+      year: '1913–1917 (?)',
       country: 'Mỹ',
       coords: [-74.0060, 40.7128],
       job: 'Nhiều nghề: rửa bát, làm vườn, lao động phổ thông…',
       learned: 'Nhìn thấy bất bình đẳng xã hội; trải nghiệm đời sống người nhập cư/lao động.',
-      note: 'Tư liệu tiểu sử ghi nhận thời gian hoạt động tại Mỹ.'
+      note: 'Lưu ý: Một số tư liệu tiểu sử ghi nhận thời gian hoạt động tại Mỹ, tuy nhiên mốc thời gian cụ thể chưa được xác minh đầy đủ.'
     },
     {
       id: 'paris',
@@ -697,7 +697,7 @@ const TimelineSection = () => {
               <div className="flex flex-col items-end">
                 <span className="font-bold text-[#D63426] uppercase tracking-wider text-sm">Hồ Chí Minh</span>
                 <span className="text-xs text-gray-500 italic mt-1">
-                  Trích: Những mẩu chuyện về đời hoạt động của Hồ Chủ tịch - Trần Dân Tiên
+                  Trích: Những mẩu chuyện về đời hoạt động của Hồ Chủ tịch - Trần Dân Tiên (bút danh, 1948)
                 </span>
               </div>
             </div>
@@ -725,9 +725,9 @@ const TimelineSection = () => {
           <div className="space-y-0">
             {[
               { year: '1858', event: 'Pháp xâm lược', desc: 'Pháp bắt đầu xâm lược Việt Nam, mở đầu cho thời kỳ thực dân. Đây là bước ngoặt lịch sử khi đất nước bắt đầu rơi vào tay kẻ thù.', color: 'from-red-500 to-red-600' },
-              { year: '1884', event: 'Pháp chiếm toàn bộ VN', desc: 'Toàn bộ đất nước rơi vào tay thực dân Pháp, dân tộc mất nước. Người dân Việt Nam phải sống trong cảnh khổ cực và áp bức.', color: 'from-red-600 to-red-700' },
+              { year: '1884', event: 'Hiệp ước Patenôtre', desc: 'Hiệp ước Patenôtre (6/6/1884) công nhận quyền bảo hộ của Pháp trên toàn Việt Nam. Dân tộc mất nước, nhân dân phải sống trong cảnh khổ cực và áp bức.', color: 'from-red-600 to-red-700' },
               { year: '1890', event: 'Hồ Chí Minh ra đời', desc: 'Nguyễn Sinh Cung ra đời tại làng Sen, Nghệ An. Ngày 19 tháng 5 năm 1890, người sẽ trở thành lãnh tụ vĩ đại của dân tộc Việt Nam.', color: 'from-yellow-400 to-orange-500', highlight: true },
-              { year: '1906', event: 'Phong trào Đông Du thất bại', desc: 'Phong trào du học Nhật Bản của Phan Bội Châu bị đàn áp. Con đường cứu nước theo lối cũ không còn khả thi.', color: 'from-red-500 to-red-600' },
+              { year: '1908-1909', event: 'Phong trào Đông Du thất bại', desc: 'Phong trào du học Nhật Bản của Phan Bội Châu bị đàn áp, Nhật Bản trục xuất du học sinh Việt Nam. Con đường cứu nước theo lối cũ không còn khả thi.', color: 'from-red-500 to-red-600' },
               { year: '1911', event: 'Chuẩn bị ra đi', desc: 'Nguyễn Tất Thành quyết định ra đi tìm đường cứu nước. Ngày 5 tháng 6, lên tàu Amiral Latouche-Tréville, bắt đầu hành trình 29 năm lưu lạc.', color: 'from-blue-500 to-blue-600', highlight: true }
             ].map((item, index) => (
               <motion.div
@@ -987,7 +987,7 @@ const TimelineSection = () => {
                 className="mt-8 p-4 bg-yellow-50 border-l-4 border-[#D4AF37] rounded-r"
               >
                 <p className="text-xs text-gray-600 italic">
-                  <strong>Nguồn:</strong> Trần Dân Tiên - <em>Những mẩu chuyện về đời hoạt động của Hồ Chủ tịch</em>
+                  <strong>Nguồn:</strong> Trần Dân Tiên (bút danh, 1948) - <em>Những mẩu chuyện về đời hoạt động của Hồ Chủ tịch</em>
                 </p>
               </motion.div>
             </div>
@@ -1879,7 +1879,7 @@ const TimelineSection = () => {
                 <h4 className="text-2xl font-bold mb-4" style={{ color: '#D63426' }}>Sự kiện trọng đại</h4>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-                    <p className="text-sm font-bold text-[#D63426]">1919 • THÀNH NGUYỄN ÁI QUỐC</p>
+                    <p className="text-sm font-bold text-[#D63426]">1919 • TRỞ THÀNH NGUYỄN ÁI QUỐC</p>
                     <p className="mt-2 font-semibold text-gray-900">“Yêu sách của nhân dân An Nam” (18/6/1919)</p>
                     <p className="text-sm text-gray-700 mt-2">Tóm tắt 8 điểm yêu cầu gửi Hội nghị Versailles:</p>
                     <ol className="mt-3 text-sm text-gray-800 list-decimal pl-5 space-y-1">
