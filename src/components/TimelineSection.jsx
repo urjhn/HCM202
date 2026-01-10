@@ -1318,7 +1318,7 @@ const TimelineSection = () => {
                     <div className="bg-[#F5DEDE] border-[3px] border-dashed border-[#D63426] rounded-2xl shadow-xl overflow-hidden">
                       <div className="p-5 bg-white/80 border-b border-[#D63426]/25">
                         <p className="text-xs uppercase tracking-widest text-[#D63426] font-bold">VÉ TÀU • 1911</p>
-                        <p className="text-2xl font-extrabold text-[#D63426]" style={{ fontFamily: 'Arial, sans-serif' }}>BẾN NHÀ RỒNG</p>
+                        <p className="text-2xl font-extrabold text-[#D63426]" style={{ fontFamily: "'Roboto', 'Segoe UI', system-ui, sans-serif" }}>BẾN NHÀ RỒNG</p>
                       </div>
 
                       <div className="p-5 bg-white/70">
@@ -1375,7 +1375,7 @@ const TimelineSection = () => {
                         <div className="bg-[#F5DEDE] border-[3px] border-dashed border-[#D63426] rounded-2xl shadow-xl overflow-hidden">
                           <div className="p-5 bg-white/80 border-b border-[#D63426]/25">
                             <p className="text-xs uppercase tracking-widest text-[#D63426] font-bold">VÉ TÀU • 1911</p>
-                            <p className="text-2xl font-extrabold text-[#D63426]" style={{ fontFamily: 'Arial, sans-serif' }}>BẾN NHÀ RỒNG</p>
+                            <p className="text-2xl font-extrabold text-[#D63426]" style={{ fontFamily: "'Roboto', 'Segoe UI', system-ui, sans-serif" }}>BẾN NHÀ RỒNG</p>
                           </div>
                           <div className="p-5 bg-white/70">
                             <div className="grid grid-cols-2 gap-4 text-sm">
@@ -1413,7 +1413,7 @@ const TimelineSection = () => {
                         <div className="bg-[#F5DEDE] border-[3px] border-dashed border-[#D63426] rounded-2xl shadow-xl overflow-hidden">
                           <div className="p-5 bg-white/80 border-b border-[#D63426]/25">
                             <p className="text-xs uppercase tracking-widest text-[#D63426] font-bold">VÉ TÀU • 1911</p>
-                            <p className="text-2xl font-extrabold text-[#D63426]" style={{ fontFamily: 'Arial, sans-serif' }}>BẾN NHÀ RỒNG</p>
+                            <p className="text-2xl font-extrabold text-[#D63426]" style={{ fontFamily: "'Roboto', 'Segoe UI', system-ui, sans-serif" }}>BẾN NHÀ RỒNG</p>
                           </div>
                           <div className="p-5 bg-white/70">
                             <div className="grid grid-cols-2 gap-4 text-sm">

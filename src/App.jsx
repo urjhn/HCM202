@@ -6,6 +6,7 @@ import QuizButton from './components/QuizButton'
 import QuizGame from './components/QuizGame'
 import ThreeBackground from './components/ThreeBackground'
 import ThreeBackgroundButton from './components/ThreeBackgroundButton'
+import ChatBot from './components/ChatBot'
 
 
 function App() {
@@ -33,6 +34,7 @@ function App() {
 
       <ThreeBackgroundButton onClick={() => setIsThreeBackgroundOpen(true)} />
       <QuizButton onClick={handleOpenQuiz} />
+      <ChatBot />
     </div>
   );
 }
