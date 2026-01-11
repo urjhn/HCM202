@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { Hands } from '@mediapipe/hands';
 import { Camera } from '@mediapipe/camera_utils';
+import { trackEvent } from '../utils/tracking'; // Tracking
 
 const ThreeBackground = ({ onClose }) => {
     const containerRef = useRef(null);
@@ -20,6 +21,9 @@ const ThreeBackground = ({ onClose }) => {
     };
 
     useEffect(() => {
+        // Track 3D View
+        trackEvent('3d_view');
+
         if (!containerRef.current) return;
 
         // --- RESOURCES ---

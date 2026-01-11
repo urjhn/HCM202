@@ -1,14 +1,34 @@
 import { FaHome, FaShip, FaBook } from 'react-icons/fa';
 import { BsSunFill } from 'react-icons/bs';
 import logo from '../assets/logo.png';
+import { trackVisit } from '../utils/tracking';
+import { useEffect, useState } from 'react';
+import Count from './Count';
+import { AnimatePresence } from 'framer-motion';
 
 const Navbar = () => {
+
+
   const scrollToId = (id) => {
     const el = document.getElementById(id);
     if (!el) return;
     window.location.hash = id;
     el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
+
+  const [visitCount, setVisitCount] = useState(null);
+  const [showDashboard, setShowDashboard] = useState(false);
+
+  useEffect(() => {
+    // Track visit on mount
+    const updateCount = async () => {
+      // Use trackVisit to increment, or getVisits to just read (to avoid double count on re-renders in dev)
+      // For simplified demo, we'll increment strictly once per session storage check or just loose mount
+      const count = await trackVisit();
+      if (count) setVisitCount(count);
+    };
+    updateCount();
+  }, []);
 
   return (
     <nav className="w-full bg-white border-b-2 border-[#D63426] sticky top-0 z-50"
@@ -29,79 +49,98 @@ const Navbar = () => {
           </div>
 
           {/* Menu Items */}
-          <div className="flex items-center gap-8">
-            {/* Chapter I */}
-            <a href="#coi-nguon" className="group cursor-pointer">
-              <div className="flex items-center gap-2 transition-all duration-300">
-                <FaHome className="text-2xl text-[#D63426] group-hover:scale-110 transition-transform" />
-                <div className="text-sm">
-                  <p className="font-bold text-[#D63426]" style={{ fontFamily: 'Arial, sans-serif' }}>CHƯƠNG I</p>
-                  <p className="text-xs text-gray-600 italic" style={{ fontFamily: 'Arial, sans-serif' }}>
-                    Cội Nguồn
-                  </p>
-                </div>
-              </div>
-            </a>
-
-            {/* Chapter II */}
-            <a
-              href="#chuong-2"
-              onClick={(e) => {
-                e.preventDefault();
-                scrollToId('chuong-2');
-              }}
-              className="group cursor-pointer"
+          <div className="flex items-center gap-6">
+            {/* Stage 1 */}
+            <button
+              onClick={() => scrollToId('stage-1')}
+              className="group cursor-pointer text-left"
             >
               <div className="flex items-center gap-2 transition-all duration-300">
-                <FaShip className="text-2xl text-[#D63426] group-hover:scale-110 transition-transform" />
-                <div className="text-sm">
-                  <p className="font-bold text-[#D63426]" style={{ fontFamily: 'Arial, sans-serif' }}>CHƯƠNG II</p>
-                  <p className="text-xs text-gray-600 italic" style={{ fontFamily: 'Arial, sans-serif' }}>
-                    Dấu Chân
-                  </p>
+                <FaHome className="text-xl text-[#D63426] group-hover:scale-110 transition-transform" />
+                <div className="hidden lg:block text-sm">
+                  <p className="font-bold text-[#D63426] uppercase">Giai đoạn 1</p>
+                  <p className="text-xs text-gray-600 italic">Yêu nước (Trước 1911)</p>
                 </div>
               </div>
-            </a>
+            </button>
 
-            {/* Chapter III */}
-            <div className="group cursor-pointer">
-              <div className="flex items-center gap-2 transition-all duration-300">
-                <BsSunFill className="text-2xl text-[#D63426] group-hover:scale-110 transition-transform" />
-                <div className="text-sm">
-                  <p className="font-bold text-[#D63426]" style={{ fontFamily: 'Arial, sans-serif' }}>CHƯƠNG III</p>
-                  <p className="text-xs text-gray-600 italic" style={{ fontFamily: 'Arial, sans-serif' }}>
-                    Thức Tỉnh
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Chapter IV */}
-            <div className="group cursor-pointer">
-              <div className="flex items-center gap-2 transition-all duration-300">
-                <FaBook className="text-2xl text-[#D63426] group-hover:scale-110 transition-transform" />
-                <div className="text-sm">
-                  <p className="font-bold text-[#D63426]" style={{ fontFamily: 'Arial, sans-serif' }}>CHƯƠNG IV</p>
-                  <p className="text-xs text-gray-600 italic" style={{ fontFamily: 'Arial, sans-serif' }}>
-                    Di Sản
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* CTA Button */}
+            {/* Stage 2 */}
             <button
-              onClick={() => scrollToId('coi-nguon')}
-              className="px-6 py-2.5 bg-[#F5DEDE] text-[#D63426] font-bold rounded-sm relative overflow-hidden border-[3px] border-dashed border-[#D63426] transition-colors duration-300 hover:text-white fill-animation"
-              style={{
-                fontFamily: 'Arial, sans-serif',
-                letterSpacing: '0.05em'
-              }}>
-              <span className="relative z-10">BẮT ĐẦU HÀNH TRÌNH</span>
+              onClick={() => scrollToId('stage-2')}
+              className="group cursor-pointer text-left"
+            >
+              <div className="flex items-center gap-2 transition-all duration-300">
+                <FaShip className="text-xl text-[#D63426] group-hover:scale-110 transition-transform" />
+                <div className="hidden lg:block text-sm">
+                  <p className="font-bold text-[#D63426] uppercase">Giai đoạn 2</p>
+                  <p className="text-xs text-gray-600 italic">Tìm đường (1911-20)</p>
+                </div>
+              </div>
+            </button>
+
+            {/* Stage 3 */}
+            <button
+              onClick={() => scrollToId('stage-3')}
+              className="group cursor-pointer text-left"
+            >
+              <div className="flex items-center gap-2 transition-all duration-300">
+                <BsSunFill className="text-xl text-[#D63426] group-hover:scale-110 transition-transform" />
+                <div className="hidden lg:block text-sm">
+                  <p className="font-bold text-[#D63426] uppercase">Giai đoạn 3</p>
+                  <p className="text-xs text-gray-600 italic">Hình thành (1920-30)</p>
+                </div>
+              </div>
+            </button>
+
+            {/* Stage 4 */}
+            <button
+              onClick={() => scrollToId('stage-4')}
+              className="group cursor-pointer text-left"
+            >
+              <div className="flex items-center gap-2 transition-all duration-300">
+                <FaBook className="text-xl text-[#D63426] group-hover:scale-110 transition-transform" />
+                <div className="hidden lg:block text-sm">
+                  <p className="font-bold text-[#D63426] uppercase">Giai đoạn 4</p>
+                  <p className="text-xs text-gray-600 italic">Thử thách (1930-41)</p>
+                </div>
+              </div>
+            </button>
+
+            {/* Stage 5 */}
+            <button
+              onClick={() => scrollToId('stage-5')}
+              className="group cursor-pointer text-left"
+            >
+              <div className="flex items-center gap-2 transition-all duration-300">
+                <FaBook className="text-xl text-[#D63426] group-hover:scale-110 transition-transform" />
+                <div className="hidden lg:block text-sm">
+                  <p className="font-bold text-[#D63426] uppercase">Giai đoạn 5</p>
+                  <p className="text-xs text-gray-600 italic">Phát triển (1941-69)</p>
+                </div>
+              </div>
+            </button>
+
+            {/* Visit Counter Badge */}
+            <button
+              onClick={() => setShowDashboard(true)}
+              className="hidden xl:flex items-center gap-2 ml-4 px-3 py-1.5 bg-gray-100 rounded-full border border-gray-200 shadow-sm hover:bg-gray-200 hover:scale-105 transition-all cursor-pointer"
+            >
+              <span className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+              </span>
+              <div className="text-xs text-left">
+                <p className="text-gray-500 font-medium">Lượt truy cập</p>
+              </div>
             </button>
           </div>
         </div>
       </div>
+
+      {/* Dashboard Modal */}
+      <AnimatePresence>
+        {showDashboard && <Count onClose={() => setShowDashboard(false)} />}
+      </AnimatePresence>
 
       <style>{`
         .fill-animation::before {

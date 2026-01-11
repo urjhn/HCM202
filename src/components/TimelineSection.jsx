@@ -6,6 +6,69 @@ import { BiSolidQuoteAltLeft } from 'react-icons/bi';
 import { Accordion, AccordionItem } from '@heroui/react';
 import { geoMercator, geoPath } from 'd3-geo';
 import { feature } from 'topojson-client';
+import { trackEvent } from '../utils/tracking'; // Tracking
+
+const ThreeDTiltCard = ({ children, className, backgroundImage }) => {
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+
+  const mouseX = useSpring(x, { stiffness: 500, damping: 50 });
+  const mouseY = useSpring(y, { stiffness: 500, damping: 50 });
+
+  const rotateX = useTransform(mouseY, [-0.5, 0.5], ["15deg", "-15deg"]);
+  const rotateY = useTransform(mouseX, [-0.5, 0.5], ["-15deg", "15deg"]);
+
+  const handleMouseMove = (event) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
+    const mouseXPos = event.clientX - rect.left;
+    const mouseYPos = event.clientY - rect.top;
+
+    const xPct = (mouseXPos / width) - 0.5;
+    const yPct = (mouseYPos / height) - 0.5;
+
+    x.set(xPct);
+    y.set(yPct);
+  };
+
+  const handleMouseLeave = () => {
+    x.set(0);
+    y.set(0);
+  };
+
+  return (
+    <motion.div
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      style={{
+        rotateX,
+        rotateY,
+        transformStyle: "preserve-3d",
+      }}
+      className={`relative rounded-2xl transition-all duration-200 ease-out transform perspective-1000 ${className}`}
+    >
+      <div
+        style={{ transform: "translateZ(50px)" }}
+        className="absolute inset-4 rounded-xl shadow-2xl bg-black/20 z-0 content-[''] pointer-events-none filter blur-xl" // Shadow depth
+      />
+      <div className="relative z-10 h-full w-full bg-white rounded-2xl overflow-hidden shadow-xl border border-gray-100 flex flex-col">
+        {children}
+
+        {/* Glosss Effect */}
+        <motion.div
+          style={{
+            background: "linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.4) 45%, rgba(255,255,255,0.1) 50%, transparent 54%)",
+            backgroundSize: "200% 200%",
+            opacity: useTransform(mouseX, [-0.5, 0.5], [0, 1]),
+            x: useTransform(mouseX, [-0.5, 0.5], ["100%", "-100%"]),
+          }}
+          className="absolute inset-0 pointer-events-none z-50 mix-blend-overlay"
+        />
+      </div>
+    </motion.div>
+  );
+};
 
 const TimelineSection = () => {
   const Motion = motion;
@@ -513,6 +576,7 @@ const TimelineSection = () => {
     <div id="coi-nguon" className="w-full bg-gradient-to-b from-white to-gray-50 py-16">
       {/* HEADER */}
       <motion.div
+        id="stage-1"
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
         transition={{ duration: 1 }}
@@ -1547,7 +1611,7 @@ const TimelineSection = () => {
           className="rounded-2xl border border-[#D4AF37]/30 shadow-2xl overflow-hidden bg-gradient-to-br from-white to-orange-50"
         >
           <div className="p-8 md:p-10">
-            <div className="flex items-start justify-between gap-6 flex-wrap">
+            <div id="stage-2" className="flex items-start justify-between gap-6 flex-wrap pt-20">
               <div>
                 <p className="text-sm font-bold tracking-wider text-[#D63426]" style={{ fontFamily: 'Arial, sans-serif' }}>GIAI ĐOẠN 2 • 1911–1920</p>
                 <h2 className="text-3xl md:text-4xl font-extrabold mt-2" style={{ fontFamily: "'Segoe UI', 'Roboto', 'Arial', sans-serif", color: '#D63426' }}>
@@ -2020,7 +2084,10 @@ const TimelineSection = () => {
                   </div>
 
                   <button
-                    onClick={restartInteractiveGame}
+                    onClick={() => {
+                      restartInteractiveGame();
+                      trackEvent('quiz_start');
+                    }}
                     className="px-8 py-3 bg-gradient-to-r from-[#D63426] to-[#B52A1E] text-white font-bold rounded-xl hover:shadow-lg hover:scale-105 transition-all"
                   >
                     Chơi lại
@@ -2095,7 +2162,7 @@ const TimelineSection = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8, delay: 0.25 }}
-          className="mt-10"
+          className="mt-10 mb-20"
         >
           <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-7">
             <h3 className="text-2xl font-bold" style={{ color: '#D63426' }}>7. CONNECT</h3>
@@ -2111,8 +2178,9 @@ const TimelineSection = () => {
                 </p>
                 <button
                   type="button"
-                  className="mt-4 px-5 py-3 bg-[#F5DEDE] text-[#D63426] font-bold rounded-lg border-2 border-dashed border-[#D63426] opacity-70 cursor-not-allowed"
-                  title="Chương tiếp theo sẽ được bổ sung"
+                  onClick={() => document.getElementById('stage-3')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                  className="mt-4 px-5 py-3 bg-[#F5DEDE] text-[#D63426] font-bold rounded-lg border-2 border-dashed border-[#D63426] hover:bg-white transition-all transform hover:scale-105"
+                  title="Khám phá giai đoạn tiếp theo"
                 >
                   Khám phá 1920–1930 →
                 </button>
@@ -2120,6 +2188,265 @@ const TimelineSection = () => {
             </div>
           </div>
         </motion.div>
+
+        {/* --- GIAI ĐOẠN 3: 1920 - 1930 --- */}
+        <div id="stage-3" className="mt-10 pt-20 border-t border-[#D63426]/20 bg-gray-50/50">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+            className="max-w-6xl mx-auto px-6 text-center"
+          >
+            <p className="text-sm font-bold tracking-wider text-[#D63426] mb-2" style={{ fontFamily: 'Arial, sans-serif' }}>
+              GIAI ĐOẠN 3 • 1920–1930
+            </p>
+            <h2 className="text-3xl md:text-4xl font-extrabold mb-8 text-[#D63426]" style={{ fontFamily: "'Segoe UI', 'Roboto', 'Arial', sans-serif" }}>
+              HÌNH THÀNH TƯ TƯỞNG CƠ BẢN
+            </h2>
+            <p className="text-xl text-gray-600 font-serif italic mb-10">(Từ chủ nghĩa yêu nước đến Mác-Lênin)</p>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
+              <div className="bg-white p-6 rounded-xl shadow-md border-t-4 border-blue-500">
+                <h4 className="font-bold text-lg text-blue-800 mb-3">🌍 Bối Cảnh</h4>
+                <p className="text-sm text-gray-700 leading-relaxed">
+                  Sau khi tìm thấy con đường cứu nước (1920), Nguyễn Ái Quốc hoạt động sôi nổi tại <strong>Pháp, Liên Xô và Trung Quốc</strong>. Người cần cụ thể hóa lý luận Mác-Lênin vào hoàn cảnh thực tế của một nước thuộc địa nửa phong kiến.
+                </p>
+              </div>
+              <div className="bg-white p-6 rounded-xl shadow-md border-t-4 border-yellow-500">
+                <h4 className="font-bold text-lg text-yellow-800 mb-3">✍️ Hoạt Động & Tổ Chức</h4>
+                <ul className="text-sm text-gray-700 space-y-2 list-disc pl-4">
+                  <li><strong>Báo chí:</strong> Chủ nhiệm báo <em>Người cùng khổ (Le Paria)</em>.</li>
+                  <li><strong>Tác phẩm:</strong> <em>Bản án chế độ thực dân Pháp</em> (1925), <em>Đường Kách mệnh</em> (1927).</li>
+                  <li><strong>Tổ chức:</strong> Thành lập <em>Hội Việt Nam Cách mạng Thanh niên</em> (1925).</li>
+                  <li><strong>Hợp nhất:</strong> Chủ trì Hội nghị thành lập <strong>Đảng Cộng sản Việt Nam</strong> (1930).</li>
+                </ul>
+              </div>
+              <div className="bg-white p-6 rounded-xl shadow-md border-t-4 border-red-500">
+                <h4 className="font-bold text-lg text-red-800 mb-3">💡 Tư Tưởng Cốt Lõi</h4>
+                <ul className="text-sm text-gray-700 space-y-2 list-disc pl-4">
+                  <li>Cách mạng Việt Nam là bộ phận của Cách mạng Thế giới.</li>
+                  <li>Khẳng định vai trò lãnh đạo của <strong>Đảng Cộng sản</strong>.</li>
+                  <li><strong>Liên minh công - nông</strong> là gốc của cách mạng.</li>
+                  <li>Cách mạng giải phóng dân tộc có thể giành thắng lợi trước cách mạng vô sản ở chính quốc.</li>
+                </ul>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+
+
+        {/* --- PHẦN MỚI: GIAI ĐOẠN 3 - HOÀN THIỆN & PHÁT TRIỂN --- */}
+        <div id="stages-later" className="mt-20 pt-10 border-t border-[#D63426]/20">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+            className="max-w-6xl mx-auto px-6"
+          >
+            {/* Header Section Stage 4 */}
+            <div id="stage-4" className="text-center mb-16 relative pt-20">
+              <p className="text-sm font-bold tracking-wider text-[#D63426] mb-2" style={{ fontFamily: 'Arial, sans-serif' }}>
+                GIAI ĐOẠN 4 • 1930–1941
+              </p>
+              <h2 className="text-3xl md:text-4xl font-extrabold mb-4" style={{ fontFamily: "'Segoe UI', 'Roboto', 'Arial', sans-serif", color: '#D63426' }}>
+                VƯỢT QUA THỬ THÁCH
+              </h2>
+              <div className="w-24 h-1 bg-[#D63426] mx-auto rounded-full mb-4"></div>
+              <p className="text-xl text-gray-600 font-serif italic">
+                (Kiên trì giữ vững lập trường)
+              </p>
+            </div>
+
+            {/* Stage 4: 1930-1941 */}
+            <div className="mb-24 relative grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+              {/* Image Column */}
+              <motion.div
+                initial={{ opacity: 0, x: -50 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.8 }}
+                className="relative group rounded-2xl overflow-hidden shadow-2xl border-4 border-white"
+              >
+                <motion.img
+                  // THAY ẢNH HƯƠNG CẢNG (GIAI ĐOẠN 4) TẠI ĐÂY
+                  src="https://cdn-images.vtv.vn/zoom/700_438/2020/5/17/chutichhochiminh-1589714154071425304672.jpg"
+                  alt="Nguyen Ai Quoc Hong Kong"
+                  className="w-full h-[400px] object-cover filter sepia-[0.3] brightness-90 contrast-125 transition-all duration-700"
+                  whileHover={{
+                    scale: 1.02,
+                    filter: "sepia(0) brightness(1) contrast(1)",
+                    rotate: 1
+                  }}
+                />
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6 text-white">
+                  <p className="font-bold text-lg">Nguyễn Ái Quốc tại Hương Cảng</p>
+                  <p className="text-sm opacity-80 italic">Giai đoạn thử lửa và kiên định lập trường (1930-1941)</p>
+                </div>
+              </motion.div>
+
+              {/* Content Column */}
+              <motion.div
+                initial={{ opacity: 0, x: 50 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.8, delay: 0.2 }}
+                className="space-y-6"
+              >
+                <div className="flex items-center gap-4 mb-2">
+                  <span className="text-5xl font-bold text-gray-200">04</span>
+                  <h3 className="text-3xl font-bold text-gray-800">Vượt qua thử thách</h3>
+                </div>
+
+                <div className="bg-white p-6 rounded-xl shadow-md border-l-4 border-orange-400">
+                  <h4 className="font-bold text-lg text-orange-600 mb-2 flex items-center gap-2">
+                    <FaShieldAlt /> Bối cảnh đầy khó khăn
+                  </h4>
+                  <p className="text-gray-700 text-justify leading-relaxed">
+                    Trong nội bộ Quốc tế Cộng sản lúc bấy giờ có sự rập khuôn, nhấn mạnh quá mức vào đấu tranh giai cấp. Nguyễn Ái Quốc bị nghi ngờ là "hữu khuynh" vì đặt mục tiêu <strong>Giải phóng dân tộc</strong> lên trên hết.
+                    Người từng bị nhà cầm quyền Anh bắt giam tại Hồng Kông (vụ án Tống Văn Sơ).
+                  </p>
+                </div>
+
+                <div className="bg-white p-6 rounded-xl shadow-md border-l-4 border-[#D63426]">
+                  <h4 className="font-bold text-lg text-[#D63426] mb-2 flex items-center gap-2">
+                    <FaFire /> Kiên trì giữ vững quan điểm
+                  </h4>
+                  <p className="text-gray-700 text-justify leading-relaxed">
+                    Dù bị phê phán, Người vẫn kiên định với chiến lược: <em>"Cách mạng ở các nước thuộc địa trước hết phải là cuộc cách mạng giải phóng dân tộc."</em>
+                    Sự kiên trì của Người đã bảo vệ được "hạt giống" tư tưởng cách mạng đúng đắn cho Việt Nam, tránh tả khuynh gây tổn thất.
+                  </p>
+                </div>
+              </motion.div>
+            </div>
+
+            {/* Custom Separator */}
+            <div className="w-full flex justify-center mb-24 opacity-30">
+              <div className="h-px w-1/3 bg-gradient-to-r from-transparent via-[#D63426] to-transparent"></div>
+            </div>
+
+            {/* Stage 5: 1941-1969 */}
+            <div id="stage-5" className="mb-20 pt-20">
+              <div className="text-center mb-12">
+                <span className="text-6xl font-bold text-gray-100 absolute left-1/2 -translate-x-1/2 -translate-y-1/2 -z-10">05</span>
+                <p className="text-sm font-bold tracking-wider text-[#D63426] mb-2" style={{ fontFamily: 'Arial, sans-serif' }}>
+                  GIAI ĐOẠN 5 • 1941–1969
+                </p>
+                <h3 className="text-3xl font-bold text-gray-800 relative inline-block">
+                  Tư tưởng soi đường & Hoàn thiện
+                  <span className="block h-1 w-full bg-[#D63426] mt-2 rounded-full transform scale-x-50"></span>
+                </h3>
+                <p className="text-gray-600 mt-4 max-w-2xl mx-auto">
+                  Giai đoạn rực rỡ nhất, khi tư tưởng của Người trở thành hiện thực sinh động qua hai cuộc kháng chiến và công cuộc xây dựng đất nước.
+                </p>
+              </div>
+
+              {/* Modern Cards Layout for 3 Sub-periods */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Card 1 - Updated to 3D Tilt */}
+                <ThreeDTiltCard className="h-full">
+                  <div className="h-40 bg-cover bg-center" style={{
+                    // THAY ẢNH 1941-1945 TẠI ĐÂY
+                    backgroundImage: "url('https://scontent.fsgn15-1.fna.fbcdn.net/v/t39.30808-6/540089440_1160215499472713_1968525319033873952_n.jpg?_nc_cat=101&ccb=1-7&_nc_sid=f727a1&_nc_ohc=XEoq7DJCAkUQ7kNvwG9ayqn&_nc_oc=Adl4EPRTI165OdQCEGUzdS63LIJcuv8-GNXfYZs6gHDg16DBxXduS-zCL1QG88sapwZbCFZ8EiPLtYyWge3bv3n9&_nc_zt=23&_nc_ht=scontent.fsgn15-1.fna&_nc_gid=8UJH9nFN5972eAsisLk0Zg&oh=00_Afo_q1LeUlbonuz9WOmadsZo8LzjhIPazs5yQalaoxu8DA&oe=6968F9DF')"
+                  }}>
+                    <div className="w-full h-full flex items-center justify-center p-4">
+                      <h4 className="text-white text-2xl font-bold text-center border-b-2 border-[#D4AF37] pb-1 shadow-black drop-shadow-md text-shadow-lg" style={{ transform: "translateZ(30px)", textShadow: "0 2px 4px rgba(0,0,0,0.8)" }}>1941 – 1945</h4>
+                    </div>
+                  </div>
+                  <div className="p-6 flex-1 flex flex-col bg-white">
+                    <h5 className="text-lg font-bold text-[#D63426] mb-3" style={{ transform: "translateZ(20px)" }}>Giành độc lập dân tộc</h5>
+                    <ul className="space-y-2 text-sm text-gray-700 flex-1" style={{ transform: "translateZ(10px)" }}>
+                      <li className="flex gap-2">
+                        <FaMapMarkerAlt className="text-orange-500 mt-1 shrink-0" />
+                        <span>Về nước trực tiếp lãnh đạo (Pác Bó, 1941).</span>
+                      </li>
+                      <li className="flex gap-2">
+                        <FaUserSecret className="text-orange-500 mt-1 shrink-0" />
+                        <span>Thành lập Mặt trận Việt Minh, đoàn kết toàn dân.</span>
+                      </li>
+                      <li className="flex gap-2">
+                        <FaStar className="text-orange-500 mt-1 shrink-0" />
+                        <span><strong>Tuyên ngôn Độc lập (1945)</strong>: Khai sinh nước VNDCCH.</span>
+                      </li>
+                    </ul>
+                  </div>
+                </ThreeDTiltCard>
+
+                {/* Card 2 - Updated to 3D Tilt */}
+                <ThreeDTiltCard className="h-full">
+                  <div className="h-40 bg-cover bg-center filter brightness-110 sepia-[0.2]" style={{
+                    // THAY ẢNH 1945-1954 TẠI ĐÂY
+                    backgroundImage: "url('https://bak16.lce.edu.vn/uploads/news/1_2.jpg')"
+                  }}>
+                    <div className="w-full h-full flex items-center justify-center p-4">
+                      <h4 className="text-white text-2xl font-bold text-center border-b-2 border-[#D4AF37] pb-1 shadow-black drop-shadow-md text-shadow-lg" style={{ transform: "translateZ(30px)", textShadow: "0 2px 4px rgba(0,0,0,0.8)" }}>1945 – 1954</h4>
+                    </div>
+                  </div>
+                  <div className="p-6 flex-1 flex flex-col bg-white">
+                    <h5 className="text-lg font-bold text-[#D63426] mb-3" style={{ transform: "translateZ(20px)" }}>Kháng chiến chống Pháp</h5>
+                    <ul className="space-y-2 text-sm text-gray-700 flex-1" style={{ transform: "translateZ(10px)" }}>
+                      <li className="flex gap-2">
+                        <FaShieldAlt className="text-blue-600 mt-1 shrink-0" />
+                        <span>Đường lối <strong>"Vừa kháng chiến, vừa kiến quốc"</strong>.</span>
+                      </li>
+                      <li className="flex gap-2">
+                        <FaFire className="text-red-600 mt-1 shrink-0" />
+                        <span>Tư tưởng quân sự: Chiến tranh nhân dân, trường kỳ kháng chiến.</span>
+                      </li>
+                      <li className="flex gap-2">
+                        <FaFlag className="text-red-600 mt-1 shrink-0" />
+                        <span>Lấy yếu chống mạnh, lấy ít địch nhiều.</span>
+                      </li>
+                    </ul>
+                  </div>
+                </ThreeDTiltCard>
+
+                {/* Card 3 - Updated to 3D Tilt */}
+                <ThreeDTiltCard className="h-full">
+                  <div className="h-40 bg-cover bg-center filter brightness-110 sepia-[0.2]" style={{
+                    // THAY ẢNH 1954-1969 TẠI ĐÂY
+                    backgroundImage: "url('https://media.vietnamplus.vn/images/7255a701687d11cb8c6bbc58a6c80785c531738e3787169ce34b631b27454b96293efe9f02a123fb7bd3cd45e79b779c4f9efb0c8972265f49d8f86164867992/bac_ho_3_1.jpg')"
+                  }}>
+                    <div className="w-full h-full flex items-center justify-center p-4">
+                      <h4 className="text-white text-2xl font-bold text-center border-b-2 border-[#D4AF37] pb-1 shadow-black drop-shadow-md text-shadow-lg" style={{ transform: "translateZ(30px)", textShadow: "0 2px 4px rgba(0,0,0,0.8)" }}>1954 – 1969</h4>
+                    </div>
+                  </div>
+                  <div className="p-6 flex-1 flex flex-col bg-white">
+                    <h5 className="text-lg font-bold text-[#D63426] mb-3" style={{ transform: "translateZ(20px)" }}>Xây dựng CNXH & Thống nhất</h5>
+                    <ul className="space-y-2 text-sm text-gray-700 flex-1" style={{ transform: "translateZ(10px)" }}>
+                      <li className="flex gap-2">
+                        <HiBriefcase className="text-green-600 mt-1 shrink-0" />
+                        <span><strong>Chiến lược lưỡng đầu</strong>: Hai miền, hai nhiệm vụ chiến lược.</span>
+                      </li>
+                      <li className="flex gap-2">
+                        <FaBalanceScale className="text-green-600 mt-1 shrink-0" />
+                        <span>Xây dựng Đảng cầm quyền: Chống tham ô, lãng phí.</span>
+                      </li>
+                      <li className="flex gap-2">
+                        <FaHeart className="text-pink-500 mt-1 shrink-0" />
+                        <span>Đạo đức cách mạng: "Cần, Kiệm, Liêm, Chính".</span>
+                      </li>
+                      <li className="bg-red-50 p-2 rounded text-xs text-[#D63426] font-bold text-center mt-2" style={{ transform: "translateZ(15px)" }}>
+                        "Đoàn kết, đoàn kết, đại đoàn kết.<br />Thành công, thành công, đại thành công."
+                      </li>
+                    </ul>
+                  </div>
+                </ThreeDTiltCard>
+              </div>
+            </div>
+
+            {/* Quote Footer */}
+            <div className="text-center pb-20">
+              <div className="inline-block p-8 bg-[#D63426] text-white rounded-2xl shadow-2xl max-w-3xl relative">
+                <BiSolidQuoteAltLeft className="text-4xl opacity-30 absolute top-4 left-4" />
+                <p className="text-xl md:text-2xl font-bold italic mb-4">
+                  "Tôi chỉ có một sự ham muốn, ham muốn tột bậc, là làm sao cho nước ta được hoàn toàn độc lập, dân ta được hoàn toàn tự do, đồng bào ai cũng có cơm ăn áo mặc, ai cũng được học hành."
+                </p>
+                <p className="font-bold opacity-90">— Hồ Chí Minh —</p>
+              </div>
+            </div>
+
+          </motion.div>
+        </div>
 
         <style>{`
           .route-dash {

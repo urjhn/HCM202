@@ -5,6 +5,7 @@ import './ChatBot.css';
 
 // Botpress Shareable URL từ dashboard (ẩn Share và Branding)
 const BOTPRESS_URL = "https://cdn.botpress.cloud/webchat/v3.5/shareable.html?configUrl=https://files.bpcontent.cloud/2026/01/10/13/20260110133945-AFAT58KI.json&hideWidget=true&showPoweredBy=false";
+import { trackEvent } from '../utils/tracking'; // Tracking
 
 export default function ChatBot() {
     const [isWebchatOpen, setIsWebchatOpen] = useState(false);
@@ -30,7 +31,10 @@ export default function ChatBot() {
     }, [isWebchatOpen]);
 
     const toggleWebchat = () => {
-        setIsWebchatOpen((prev) => !prev);
+        setIsWebchatOpen((prev) => {
+            if (!prev) trackEvent('ai_query'); // Track when opening chat
+            return !prev;
+        });
         setShowGreeting(false);
     };
 
