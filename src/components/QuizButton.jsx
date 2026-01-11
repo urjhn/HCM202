@@ -32,7 +32,7 @@ const QuizButton = ({ onClick }) => {
       >
         <motion.div
           className="quiz-icon"
-          animate={{ 
+          animate={{
             rotate: isHovered ? [0, -10, 10, -10, 0] : 0,
             scale: isHovered ? 1.1 : 1
           }}
@@ -45,8 +45,8 @@ const QuizButton = ({ onClick }) => {
             />
           </svg>
         </motion.div>
-        
-        
+
+
         <AnimatePresence>
           {isHovered && (
             <motion.div
@@ -60,7 +60,7 @@ const QuizButton = ({ onClick }) => {
           )}
         </AnimatePresence>
       </motion.div>
-      
+
       {/* Ripple effects */}
       <motion.div
         className="ripple"
@@ -81,10 +81,10 @@ const QuizButton = ({ onClick }) => {
           opacity: [0.6, 0, 0.6]
         }}
         transition={{
-          duration: 2,
+          duration: 8,
           repeat: Infinity,
           ease: "easeInOut",
-          delay: 1
+          delay: 0.5
         }}
       />
     </motion.div>

@@ -5,9 +5,25 @@
   border-radius: 8px !important;
   padding: 1.5rem 2rem !important;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2) !important;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif !important;
+  font-family: 'Be Vietnam Pro', sans-serif !important;
   max-width: 520px !important;
   width: 90% !important;
+}
+
+.swal2-popup,
+.swal2-title,
+.swal2-html-container,
+.swal2-confirm,
+.swal2-cancel,
+.swal2-content {
+  font-family: 'Be Vietnam Pro', sans-serif !important;
+}
+
+.quiz-popup .swal2-title,
+.quiz-popup .swal2-html-container,
+.quiz-popup .swal2-confirm,
+.quiz-popup .swal2-cancel {
+  font-family: 'Be Vietnam Pro', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
 }
 
 .quiz-welcome-popup {
@@ -30,8 +46,15 @@
 }
 
 @keyframes pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.1); }
+
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.1);
+  }
 }
 
 .quiz-welcome h3 {
@@ -200,7 +223,7 @@
   transform: translateX(4px);
 }
 
-.quiz-option input[type="radio"]:checked + label {
+.quiz-option input[type="radio"]:checked+label {
   background: #e53935;
   border-color: #e53935;
 }
@@ -221,7 +244,7 @@
   transition: all 0.2s ease;
 }
 
-.quiz-option input[type="radio"]:checked + label .option-letter {
+.quiz-option input[type="radio"]:checked+label .option-letter {
   background: #fff;
   color: #e53935;
 }
@@ -234,7 +257,7 @@
   flex: 1;
 }
 
-.quiz-option input[type="radio"]:checked + label .option-text {
+.quiz-option input[type="radio"]:checked+label .option-text {
   color: #fff;
   font-weight: 600;
 }
@@ -271,9 +294,17 @@
 }
 
 @keyframes bounceIn {
-  0% { transform: scale(0); }
-  50% { transform: scale(1.2); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(0);
+  }
+
+  50% {
+    transform: scale(1.2);
+  }
+
+  100% {
+    transform: scale(1);
+  }
 }
 
 .result-text {
@@ -314,8 +345,13 @@
 }
 
 @keyframes scoreEarn {
-  0% { transform: scale(0) rotate(-180deg); }
-  100% { transform: scale(1) rotate(0); }
+  0% {
+    transform: scale(0) rotate(-180deg);
+  }
+
+  100% {
+    transform: scale(1) rotate(0);
+  }
 }
 
 .result-final-popup {
@@ -341,9 +377,19 @@
 }
 
 @keyframes countUp {
-  0% { transform: scale(0); opacity: 0; }
-  50% { transform: scale(1.2); }
-  100% { transform: scale(1); opacity: 1; }
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+
+  50% {
+    transform: scale(1.2);
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 .result-percentage {
@@ -433,64 +479,64 @@
     padding: 1.5rem !important;
     width: 95% !important;
   }
-  
+
   .quiz-welcome-popup {
     padding: 2rem 1.5rem !important;
   }
-  
+
   .quiz-question-popup {
     padding: 1.5rem !important;
   }
-  
+
   .quiz-welcome h3 {
     font-size: 1.35rem;
     letter-spacing: 1px;
   }
-  
+
   .quiz-star {
     font-size: 3.5rem;
   }
-  
+
   .info-item {
     padding: 0.75rem 1.25rem;
     font-size: 0.9rem;
   }
-  
+
   .question-text {
     font-size: 1.2rem;
   }
-  
+
   .quiz-option label {
     padding: 1rem 1.25rem;
     gap: 1rem;
     min-height: 55px;
   }
-  
+
   .option-letter {
     width: 40px;
     height: 40px;
     font-size: 1.15rem;
   }
-  
+
   .option-text {
     font-size: 1rem;
   }
-  
+
   .result-score-big {
     font-size: 3.5rem;
     letter-spacing: 2px;
   }
-  
+
   .result-stats {
     flex-direction: column;
     gap: 1rem;
   }
-  
+
   .stat-item {
     padding: 1rem 1.5rem;
     min-width: 120px;
   }
-  
+
   .result-final-popup {
     padding: 2rem 1.5rem !important;
   }

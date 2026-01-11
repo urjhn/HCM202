@@ -1,27 +1,28 @@
 import Swal from 'sweetalert2';
 import './QuizGame.css';
+import { trackEvent } from '../utils/tracking';
 
 // Tạo âm thanh vỗ tay
 const playApplause = () => {
   const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBDGH0fPTgjMGHm7A7+OZURE');
   audio.volume = 0.3;
-  audio.play().catch(() => {});
+  audio.play().catch(() => { });
 };
 
 const playCorrectSound = () => {
   const audioContext = new (window.AudioContext || window.webkitAudioContext)();
   const oscillator = audioContext.createOscillator();
   const gainNode = audioContext.createGain();
-  
+
   oscillator.connect(gainNode);
   gainNode.connect(audioContext.destination);
-  
+
   oscillator.frequency.value = 800;
   oscillator.type = 'sine';
-  
+
   gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
   gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-  
+
   oscillator.start(audioContext.currentTime);
   oscillator.stop(audioContext.currentTime + 0.3);
 };
@@ -30,17 +31,17 @@ const playWrongSound = () => {
   const audioContext = new (window.AudioContext || window.webkitAudioContext)();
   const oscillator = audioContext.createOscillator();
   const gainNode = audioContext.createGain();
-  
+
   oscillator.connect(gainNode);
   gainNode.connect(audioContext.destination);
-  
+
   // Tạo âm thanh buzzer thấp cho câu sai
   oscillator.frequency.value = 200;
   oscillator.type = 'sawtooth';
-  
+
   gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
   gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-  
+
   oscillator.start(audioContext.currentTime);
   oscillator.stop(audioContext.currentTime + 0.5);
 };
@@ -139,6 +140,10 @@ class QuizGame {
     this.startTime = Date.now();
 
     await this.showWelcome();
+
+    // Tracking start
+    trackEvent('quiz_start');
+
     await this.playQuiz();
   }
 
@@ -190,9 +195,9 @@ class QuizGame {
     for (let i = 0; i < quizData.length; i++) {
       this.currentQuestion = i;
       const question = quizData[i];
-      
+
       const result = await this.askQuestion(question, i);
-      
+
       if (result.isDismissed) {
         const shouldContinue = await this.confirmExit();
         if (!shouldContinue) {
@@ -203,7 +208,7 @@ class QuizGame {
       }
 
       this.userAnswers.push(result.value);
-      
+
       if (parseInt(result.value) === question.correct) {
         this.score += 10;
         await this.showCorrectAnswer(question);
@@ -270,14 +275,14 @@ class QuizGame {
     // Phát âm thanh vỗ tay và âm thanh đúng
     playApplause();
     setTimeout(() => playCorrectSound(), 100);
-    
+
     await Swal.fire({
       title: '<strong>🎉 Chính xác!</strong>',
       html: `
         <div class="result-container correct">
           <div class="result-icon">✓</div>
           <p class="result-text">${question.explanation}</p>
-          <div class="score-earned">+10 điểm</div>
+          <div class="score-earned">+10 điểm (Tổng: ${this.score})</div>
         </div>
       `,
       icon: null,
@@ -288,7 +293,7 @@ class QuizGame {
       },
       background: '#ffebee',
       color: '#1a1a1a',
-      timer: 3000,
+      timer: 5000,
       timerProgressBar: true,
       showClass: {
         popup: 'animate__animated animate__zoomIn'
@@ -299,7 +304,7 @@ class QuizGame {
   async showWrongAnswer(question) {
     // Phát âm thanh buzzer khi trả lời sai
     playWrongSound();
-    
+
     await Swal.fire({
       title: '<strong>😔 Chưa đúng!</strong>',
       html: `
@@ -319,7 +324,7 @@ class QuizGame {
       },
       background: '#ffebee',
       color: '#1a1a1a',
-      timer: 4000,
+      timer: 5000,
       timerProgressBar: true,
       showClass: {
         popup: 'animate__animated animate__shakeX'
@@ -339,14 +344,14 @@ class QuizGame {
         popup: 'quiz-popup'
       }
     });
-    
+
     return !result.isConfirmed;
   }
 
   async showResults() {
     const percentage = (this.score / (quizData.length * 10)) * 100;
     const timeTaken = Math.floor((Date.now() - this.startTime) / 1000);
-    
+
     let grade, emoji, message;
     if (percentage >= 90) {
       grade = 'Xuất sắc';
