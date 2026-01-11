@@ -52,7 +52,7 @@ const quizData = [
     question: "Hồ Chí Minh sinh năm nào?",
     options: ["1889", "1890", "1891", "1892"],
     correct: 1,
-    explanation: "Chủ tịch Hồ Chí Minh sinh ngày 19/5/1890 tại làng Kim Liên, Nam Đàn, Nghệ An."
+    explanation: "Chủ tịch Hồ Chí Minh sinh ngày 19/5/1890 tại xã Kim Liên, Nam Đàn, Nghệ An."
   },
   {
     question: "Tên khai sinh của Hồ Chí Minh là gì?",
@@ -61,7 +61,7 @@ const quizData = [
     explanation: "Tên khai sinh của Người là Nguyễn Sinh Cung. Sau đó Người lấy tên là Nguyễn Tất Thành."
   },
   {
-    question: "Năm nào Nguyễn Ái Quốc ra đi tìm đường cứu nước?",
+    question: "Năm nào Nguyễn Tất Thành ra đi tìm đường cứu nước?",
     options: ["1909", "1910", "1911", "1912"],
     correct: 2,
     explanation: "Năm 1911, Nguyễn Tất Thành (sau này là Hồ Chí Minh) ra đi tìm đường cứu nước từ bến cảng Nhà Rồng, Sài Gòn."
@@ -90,10 +90,10 @@ const quizData = [
     explanation: "Tư tưởng Hồ Chí Minh là sự vận dụng và phát triển sáng tạo chủ nghĩa Mác - Lênin vào điều kiện cụ thể của Việt Nam, kết hợp với truyền thống văn hóa dân tộc."
   },
   {
-    question: "Bài viết 'Bản án chế độ thực dân Pháp' được Nguyễn Ái Quốc trình bày tại đâu?",
-    options: ["Đại hội Tours", "Hội nghị Véc-xây", "Hội nghị Paris", "Đại hội Matxcova"],
-    correct: 0,
-    explanation: "Tại Đại hội Tours (Pháp) năm 1920, Nguyễn Ái Quốc đã trình bày 'Bản án chế độ thực dân Pháp', tố cáo tội ác của thực dân Pháp ở Đông Dương."
+    question: "Tác phẩm 'Bản án chế độ thực dân Pháp' được Nguyễn Ái Quốc xuất bản vào năm nào?",
+    options: ["1923", "1924", "1925", "1926"],
+    correct: 2,
+    explanation: "'Bản án chế độ thực dân Pháp' (Le Procès de la colonisation française) được xuất bản năm 1925, tố cáo tội ác của chủ nghĩa thực dân."
   },
   {
     question: "Hội Việt Nam Cách mạng Thanh niên được thành lập năm nào?",

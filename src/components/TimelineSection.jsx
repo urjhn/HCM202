@@ -198,7 +198,7 @@ const TimelineSection = () => {
     {
       id: 'london',
       label: 'London',
-      year: '1913',
+      year: '1913–1917',
       country: 'Anh',
       coords: [-0.1276, 51.5072],
       job: 'Lao động dịch vụ (bếp/khách sạn), làm thuê',
@@ -208,7 +208,7 @@ const TimelineSection = () => {
     {
       id: 'newyork',
       label: 'New York',
-      year: '1913–1917 (?)',
+      year: '1912–1913 (?)',
       country: 'Mỹ',
       coords: [-74.0060, 40.7128],
       job: 'Nhiều nghề: rửa bát, làm vườn, lao động phổ thông…',
@@ -298,7 +298,7 @@ const TimelineSection = () => {
     {
       id: 'step2',
       title: 'Paris, 1919: Thời Cơ Lịch Sử',
-      desc: 'Hội nghị Versailles khai mạc. Các cường quốc đang bàn lại trật tự thế giới. Cơ hội ngàn năm có một.',
+      desc: 'Hội nghị Hòa bình Paris (họp tại Versailles) khai mạc. Các cường quốc đang bàn lại trật tự thế giới. Cơ hội ngàn năm có một.',
       question: 'Hành động của bạn là gì?',
       options: [
         { id: 'A', label: 'Gửi "Bản Yêu sách" đòi quyền tự quyết', icon: <FaFileContract />, type: 'vision', feedback: 'Một hành động dũng cảm gây chấn động dư luận Pháp.' },
@@ -790,7 +790,7 @@ const TimelineSection = () => {
             {[
               { year: '1858', event: 'Pháp xâm lược', desc: 'Pháp bắt đầu xâm lược Việt Nam, mở đầu cho thời kỳ thực dân. Đây là bước ngoặt lịch sử khi đất nước bắt đầu rơi vào tay kẻ thù.', color: 'from-red-500 to-red-600' },
               { year: '1884', event: 'Hiệp ước Patenôtre', desc: 'Hiệp ước Patenôtre (6/6/1884) công nhận quyền bảo hộ của Pháp trên toàn Việt Nam. Dân tộc mất nước, nhân dân phải sống trong cảnh khổ cực và áp bức.', color: 'from-red-600 to-red-700' },
-              { year: '1890', event: 'Hồ Chí Minh ra đời', desc: 'Nguyễn Sinh Cung ra đời tại làng Sen, Nghệ An. Ngày 19 tháng 5 năm 1890, người sẽ trở thành lãnh tụ vĩ đại của dân tộc Việt Nam.', color: 'from-yellow-400 to-orange-500', highlight: true },
+              { year: '1890', event: 'Hồ Chí Minh ra đời', desc: 'Nguyễn Sinh Cung ra đời tại Kim Liên, Nam Đàn, Nghệ An. Ngày 19 tháng 5 năm 1890, người sẽ trở thành lãnh tụ vĩ đại của dân tộc Việt Nam.', color: 'from-yellow-400 to-orange-500', highlight: true },
               { year: '1908-1909', event: 'Phong trào Đông Du thất bại', desc: 'Phong trào du học Nhật Bản của Phan Bội Châu bị đàn áp, Nhật Bản trục xuất du học sinh Việt Nam. Con đường cứu nước theo lối cũ không còn khả thi.', color: 'from-red-500 to-red-600' },
               { year: '1911', event: 'Chuẩn bị ra đi', desc: 'Nguyễn Tất Thành quyết định ra đi tìm đường cứu nước. Ngày 5 tháng 6, lên tàu Amiral Latouche-Tréville, bắt đầu hành trình 29 năm lưu lạc.', color: 'from-blue-500 to-blue-600', highlight: true }
             ].map((item, index) => (
@@ -920,7 +920,7 @@ const TimelineSection = () => {
                   title: 'Ánh sáng và Bạo quyền',
                   details: [
                     'Học trường Quốc học Huế. Tiếp thu văn hóa phương Tây.',
-                    '1908: Tham gia phong trào chống thuế Trung Kỳ → Bị đuổi học.',
+                    '1908: Chứng kiến phong trào chống thuế Trung Kỳ; rời Quốc học Huế.',
                     'Nhận ra: "Cải lương" hay "Cầu viện" đều bế tắc.'
                   ],
                   color: 'from-yellow-500/10 to-red-500/10'
@@ -1194,24 +1194,6 @@ const TimelineSection = () => {
                     <p className="text-lg text-gray-800 flex-1">{lesson.text}</p>
                   </motion.div>
                 ))}
-
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.6 }}
-                  className="mt-8 bg-gradient-to-br from-yellow-50 to-orange-50 p-6 rounded-lg border-2 border-[#D4AF37] shadow-lg"
-                >
-                  <p className="text-lg mb-4 font-semibold text-gray-800" style={{ fontFamily: 'Arial, sans-serif' }}>
-                    Nếu là bạn sống trong thời kỳ đó, bạn sẽ làm gì?
-                  </p>
-                  <motion.button
-                    whileHover={{ scale: 1.05, boxShadow: '0 10px 30px rgba(214, 52, 38, 0.3)' }}
-                    whileTap={{ scale: 0.98 }}
-                    className="px-8 py-3 bg-gradient-to-r from-[#D63426] to-[#B52A1E] text-white rounded-lg font-bold hover:from-[#B52A1E] hover:to-[#D63426] transition-all shadow-md"
-                  >
-                    Chia sẻ suy nghĩ
-                  </motion.button>
-                </motion.div>
               </div>
             </div>
           )}
@@ -1989,11 +1971,6 @@ const TimelineSection = () => {
                     <p><span className="font-bold">Tri thức:</span> Tiếp cận chủ nghĩa Mác–Lênin (bước ngoặt 1920)</p>
                     <p><span className="font-bold">Mục tiêu:</span> Con đường cứu nước gắn với giải phóng người lao động và dân tộc bị áp bức</p>
                   </div>
-                  <div className="mt-6 p-4 bg-gradient-to-br from-yellow-50 to-orange-50 border border-[#D4AF37]/40 rounded-xl">
-                    <p className="text-gray-800 italic">
-                      “Từ một thanh niên yêu nước mơ hồ → thành một chiến sĩ cách mạng giác ngộ (bước ngoặt 1920).”
-                    </p>
-                  </div>
                 </div>
               </div>
             )}
@@ -2164,29 +2141,6 @@ const TimelineSection = () => {
           transition={{ duration: 0.8, delay: 0.25 }}
           className="mt-10 mb-20"
         >
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-lg p-7">
-            <h3 className="text-2xl font-bold" style={{ color: '#D63426' }}>7. CONNECT</h3>
-            <div className="mt-4 border border-[#D4AF37]/30 rounded-xl overflow-hidden">
-              <div className="p-5 bg-gradient-to-r from-[#D63426] to-[#B52A1E] text-white">
-                <p className="font-bold text-lg">🌟 Chuyển biến lớn</p>
-                <p className="text-sm text-white/85 mt-1">Trước 1920: “Tìm đường cứu nước như thế nào?”</p>
-                <p className="text-sm text-white/85">Sau 1920: “CNXH + Tổ chức chính trị = con đường giải phóng”</p>
-              </div>
-              <div className="p-5 bg-white">
-                <p className="text-sm text-gray-800">
-                  ➡️ Nhiệm vụ tiếp theo (gợi mở giai đoạn sau): tuyên truyền lý luận cách mạng, chuẩn bị cho sự ra đời tổ chức lãnh đạo.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => document.getElementById('stage-3')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                  className="mt-4 px-5 py-3 bg-[#F5DEDE] text-[#D63426] font-bold rounded-lg border-2 border-dashed border-[#D63426] hover:bg-white transition-all transform hover:scale-105"
-                  title="Khám phá giai đoạn tiếp theo"
-                >
-                  Khám phá 1920–1930 →
-                </button>
-              </div>
-            </div>
-          </div>
         </motion.div>
 
         {/* --- GIAI ĐOẠN 3: 1920 - 1930 --- */}
@@ -2216,7 +2170,7 @@ const TimelineSection = () => {
               <div className="bg-white p-6 rounded-xl shadow-md border-t-4 border-yellow-500">
                 <h4 className="font-bold text-lg text-yellow-800 mb-3">✍️ Hoạt Động & Tổ Chức</h4>
                 <ul className="text-sm text-gray-700 space-y-2 list-disc pl-4">
-                  <li><strong>Báo chí:</strong> Chủ nhiệm báo <em>Người cùng khổ (Le Paria)</em>.</li>
+                  <li><strong>Báo chí:</strong> Tham gia sáng lập, biên tập và viết bài cho <em>Người cùng khổ (Le Paria)</em>.</li>
                   <li><strong>Tác phẩm:</strong> <em>Bản án chế độ thực dân Pháp</em> (1925), <em>Đường Kách mệnh</em> (1927).</li>
                   <li><strong>Tổ chức:</strong> Thành lập <em>Hội Việt Nam Cách mạng Thanh niên</em> (1925).</li>
                   <li><strong>Hợp nhất:</strong> Chủ trì Hội nghị thành lập <strong>Đảng Cộng sản Việt Nam</strong> (1930).</li>
@@ -2302,7 +2256,7 @@ const TimelineSection = () => {
                     <FaShieldAlt /> Bối cảnh đầy khó khăn
                   </h4>
                   <p className="text-gray-700 text-justify leading-relaxed">
-                    Trong nội bộ Quốc tế Cộng sản lúc bấy giờ có sự rập khuôn, nhấn mạnh quá mức vào đấu tranh giai cấp. Nguyễn Ái Quốc bị nghi ngờ là "hữu khuynh" vì đặt mục tiêu <strong>Giải phóng dân tộc</strong> lên trên hết.
+                    Trong phong trào cộng sản quốc tế thời kỳ này có nhiều tranh luận về đường lối, trong đó có cách nhìn về vấn đề dân tộc và thuộc địa. Nguyễn Ái Quốc kiên trì nhấn mạnh nhiệm vụ <strong>giải phóng dân tộc</strong> như một yêu cầu cấp bách của các nước thuộc địa.
                     Người từng bị nhà cầm quyền Anh bắt giam tại Hồng Kông (vụ án Tống Văn Sơ).
                   </p>
                 </div>

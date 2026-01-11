@@ -34,7 +34,7 @@ const ContentSection = () => {
                fontFamily: 'Segoe UI, Tahoma, Arial, sans-serif',
                color: '#333'
              }}>
-            <span className="font-bold">Hồ Chí Minh</span> (tên khai sinh Nguyễn Sinh Cung, sau đổi tên Nguyễn Tất Thành và Nguyễn Ái Quốc trong thời kỳ cách mạng) sinh ngày 19 tháng 5 năm 1890 tại làng Kim Liên, huyện Nam Đàn, tỉnh Nghệ An, và qua đời ngày 2 tháng 9 năm 1969 tại Hà Nội.
+            <span className="font-bold">Hồ Chí Minh</span> (tên khai sinh Nguyễn Sinh Cung, sau đổi tên Nguyễn Tất Thành và Nguyễn Ái Quốc trong thời kỳ cách mạng) sinh ngày 19 tháng 5 năm 1890 tại làng Hoàng Trù (xã Kim Liên), huyện Nam Đàn, tỉnh Nghệ An, và qua đời ngày 2 tháng 9 năm 1969 tại Hà Nội.
           </p>
         </div>
       </div>
@@ -71,7 +71,7 @@ const ContentSection = () => {
             </p>
             
             <p style={{ textAlign: 'justify' }}>
-              Năm 1987, UNESCO đã vinh danh Hồ Chí Minh là "Anh hùng giải phóng dân tộc, Danh nhân văn hóa kiệt xuất của Việt Nam". Tư tưởng của Người kết hợp chủ nghĩa yêu nước với chủ nghĩa quốc tế, hòa quyện những giá trị truyền thống Việt Nam với tư tưởng cách mạng hiện đại. Qua những bài viết và hành động của mình, Người đã truyền cảm hứng cho nhiều thế hệ người Việt Nam đấu tranh vì tự do và phẩm giá của Tổ quốc.
+              Năm 1987, UNESCO thông qua nghị quyết kỷ niệm 100 năm ngày sinh Chủ tịch Hồ Chí Minh, ghi nhận đóng góp của Người đối với văn hóa và sự nghiệp giải phóng dân tộc. Tư tưởng của Người kết hợp chủ nghĩa yêu nước với chủ nghĩa quốc tế, hòa quyện những giá trị truyền thống Việt Nam với tư tưởng cách mạng hiện đại. Qua những bài viết và hành động của mình, Người đã truyền cảm hứng cho nhiều thế hệ người Việt Nam đấu tranh vì tự do và phẩm giá của Tổ quốc.
             </p>
           </div>
         </div>
