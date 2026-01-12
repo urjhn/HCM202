@@ -750,7 +750,7 @@ const TimelineSection = () => {
           transition={{ duration: 0.8, delay: 0.2 }}
           className="mt-16 flex justify-center"
         >
-          <div className="max-w-2xl bg-gradient-to-br from-orange-50 to-yellow-50 border-l-4 border-[#D63426] shadow-xl rounded-lg p-8 relative">
+            <div className="max-w-2xl bg-gradient-to-br from-orange-50 to-yellow-50 border-l-4 border-[#D63426] shadow-xl rounded-lg p-5 sm:p-6 md:p-8 relative">
             <div className="absolute -top-6 -left-4 text-6xl text-[#D63426] opacity-30 font-serif">"</div>
 
             <p className="text-lg italic text-gray-800 leading-relaxed mb-6 relative z-10" style={{ fontFamily: "'Segoe UI', 'Roboto', 'Arial', sans-serif" }}>
@@ -783,7 +783,7 @@ const TimelineSection = () => {
 
         <motion.div className="relative">
           {/* Central Vertical Line */}
-          <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-gradient-to-b from-[#D63426] to-[#B52A1E] -ml-px" />
+          <div className="hidden md:block absolute left-1/2 top-0 bottom-0 w-0.5 bg-gradient-to-b from-[#D63426] to-[#B52A1E] -ml-px" />
 
           {/* Vertical Timeline */}
           <div className="space-y-0">
@@ -800,14 +800,14 @@ const TimelineSection = () => {
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true, margin: "-100px" }}
                 transition={{ duration: 0.8, delay: index * 0.15 }}
-                className="relative flex items-center py-8"
+                className="relative flex flex-col md:flex-row items-center py-8"
               >
                 {/* Left Content (for even index) */}
                 {index % 2 === 0 && (
                   <motion.div
                     whileHover={{ scale: 1.02, y: -5 }}
                     transition={{ type: "spring", stiffness: 300 }}
-                    className={`w-5/12 bg-gradient-to-br ${item.highlight ? 'from-yellow-50 to-orange-50 border-yellow-500' : 'from-white to-red-50 border-[#D63426]'} p-6 rounded-xl shadow-lg border-l-4 hover:shadow-2xl transition-all mr-auto`}
+                    className={`w-full md:w-5/12 bg-gradient-to-br ${item.highlight ? 'from-yellow-50 to-orange-50 border-yellow-500' : 'from-white to-red-50 border-[#D63426]'} p-5 sm:p-6 rounded-xl shadow-lg border-l-4 hover:shadow-2xl transition-all md:mr-auto order-2 md:order-none`}
                   >
                     <div>
                       <h3 className="text-xl font-bold mb-2" style={{ color: item.highlight ? '#F59E0B' : '#D63426' }}>
@@ -819,7 +819,7 @@ const TimelineSection = () => {
                 )}
 
                 {/* Timeline Node (Center) */}
-                <div className="absolute left-1/2 -translate-x-1/2 z-10">
+                <div className="relative md:absolute md:left-1/2 md:-translate-x-1/2 z-10 mb-4 md:mb-0 order-1 md:order-none">
                   <motion.div
                     initial={{ scale: 0, rotate: -180 }}
                     whileInView={{ scale: 1, rotate: 0 }}
@@ -842,7 +842,7 @@ const TimelineSection = () => {
                   <motion.div
                     whileHover={{ scale: 1.02, y: -5 }}
                     transition={{ type: "spring", stiffness: 300 }}
-                    className={`w-5/12 bg-gradient-to-br ${item.highlight ? 'from-yellow-50 to-orange-50 border-yellow-500' : 'from-white to-red-50 border-[#D63426]'} p-6 rounded-xl shadow-lg border-l-4 hover:shadow-2xl transition-all ml-auto`}
+                    className={`w-full md:w-5/12 bg-gradient-to-br ${item.highlight ? 'from-yellow-50 to-orange-50 border-yellow-500' : 'from-white to-red-50 border-[#D63426]'} p-5 sm:p-6 rounded-xl shadow-lg border-l-4 hover:shadow-2xl transition-all md:ml-auto order-2 md:order-none`}
                   >
                     <div>
                       <h3 className="text-xl font-bold mb-2" style={{ color: item.highlight ? '#F59E0B' : '#D63426' }}>
@@ -870,14 +870,14 @@ const TimelineSection = () => {
         </motion.h2>
 
         {/* Tab Headers */}
-        <div className="flex gap-4 mb-6 overflow-x-auto">
+        <div className="flex gap-3 sm:gap-4 mb-6 overflow-x-auto">
           {tabs.map((tab) => (
             <motion.button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               whileHover={{ scale: 1.05, y: -2 }}
               whileTap={{ scale: 0.98 }}
-              className={`flex items-center gap-2 px-6 py-3 rounded-lg font-bold whitespace-nowrap transition-all ${activeTab === tab.id
+              className={`flex items-center gap-2 px-4 py-2 sm:px-6 sm:py-3 rounded-lg font-bold whitespace-nowrap transition-all ${activeTab === tab.id
                 ? 'bg-gradient-to-r from-[#D63426] to-[#B52A1E] text-white shadow-lg'
                 : 'bg-white border-2 border-gray-200 text-gray-700 hover:border-[#D4AF37] hover:shadow-md'
                 }`}
@@ -895,7 +895,7 @@ const TimelineSection = () => {
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5 }}
-          className="bg-gradient-to-br from-white to-orange-50 p-8 rounded-lg shadow-xl border-2 border-[#D4AF37]/30 min-h-[500px]"
+          className="bg-gradient-to-br from-white to-orange-50 p-5 sm:p-6 md:p-8 rounded-lg shadow-xl border-2 border-[#D4AF37]/30 min-h-[500px]"
         >
           {activeTab === 0 && (
             <div className="space-y-6">
@@ -987,7 +987,7 @@ const TimelineSection = () => {
                 <h3 className="text-2xl font-bold" style={{ color: '#D63426' }}>Những Ảnh Hưởng Định Hình</h3>
               </div>
 
-              <div className="grid grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[
                   {
                     icon: 'https://upload.wikimedia.org/wikipedia/vi/0/08/Nguyensinhsac.jpg',
